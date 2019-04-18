@@ -11,7 +11,7 @@ from pathlib import Path
 
 import inquirer
 
-from term_color import formatted_span as color
+from .term_color import formatted_span as color
 
 
 class Reporter:
