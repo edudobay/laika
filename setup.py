@@ -22,7 +22,7 @@ setup(
     packages=['simple_git_deploy'],
     entry_points={
         'console_scripts': [
-            'simple-git-deploy = simple_git_deploy.main',
+            'simple-git-deploy = simple_git_deploy.cli:main',
         ],
     },
 )
