@@ -1,5 +1,8 @@
 # simple-git-deploy
 
+<a href="https://github.com/edudobay/simple-git-deploy/tags" alt="Tags">
+  <img src="https://img.shields.io/github/tag/edudobay/simple-git-deploy.svg" alt="Latest tag" /></a>
+
 Script for managing deployments from Git repositories.
 
 
