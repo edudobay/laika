@@ -52,6 +52,13 @@ class Config:
     def read(cls):
         config = configparser.ConfigParser()
 
+        # defaults
+        config.read_dict({
+            'dirs': {
+                'git': '.',
+            },
+        })
+
         config_files = ['deploy.ini']
         if not config.read(config_files):
             raise RuntimeError('no configuration file could be read')
