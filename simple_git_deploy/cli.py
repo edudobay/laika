@@ -303,8 +303,8 @@ def _build_parser():
     parser_select.add_argument('deploy_id', nargs='?', help='the ID of the prepared tree')
     parser_select.set_defaults(func=cmd_select)
 
-    parser_select = subparsers.add_parser('list', help='list all prepared trees')
-    parser_select.set_defaults(func=cmd_list)
+    parser_list = subparsers.add_parser('list', help='list all prepared trees')
+    parser_list.set_defaults(func=cmd_list)
 
     return parser
 
