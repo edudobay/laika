@@ -50,11 +50,43 @@ class Config:
         return cls(config)
 
 
+class TreeMeta:
+    def __init__(self, source_path, git_ref, git_hash, timestamp):
+        self.source_path = source_path
+        self.git_ref = git_ref
+        self.git_hash = git_hash
+        self.timestamp = timestamp
+
+
+    @classmethod
+    def from_dict(cls, d):
+        d = dict(d)
+        version = d.pop('version', '0')
+
+        d['source_path'] = d.pop('source_path', None)
+        d['timestamp'] = datetime.datetime.strptime(d['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+
+        if version == '0':
+            d['git_hash'] = d.pop('hash', None)
+
+        return cls(**d)
+
+
+    def to_dict(self):
+        return dict(
+            version='1',
+            source_path=self.source_path,
+            git_ref=self.git_ref,
+            git_hash=self.git_hash,
+            timestamp=self.timestamp,
+        )
+
+
 class Tree:
-    def __init__(self, tree_id: str, path: Path, git_ref: str):
+    def __init__(self, tree_id: str, path: Path, meta: TreeMeta):
         self.tree_id = tree_id
         self.path = path
-        self.git_ref = git_ref
+        self.meta = meta
 
 
 class Trees:
@@ -121,14 +153,15 @@ def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir
     ) \
         .check_returncode()
 
-    write_tree_meta(path, {
-        'source_path': os.path.realpath(git_dir),
-        'git_ref': git_ref,
-        'hash': full_hash,
-        'timestamp': timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    })
+    meta = TreeMeta(
+        source_path=os.path.realpath(git_dir),
+        git_ref=git_ref,
+        git_hash=full_hash,
+        timestamp=timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    )
+    write_tree_meta(path, meta.to_dict())
 
-    return Tree(tree_id, path, git_ref=git_ref)
+    return Tree(tree_id, path, meta)
 
 
 def run_build(tree: Tree, build_command: str, reporter: Reporter):
@@ -138,7 +171,7 @@ def run_build(tree: Tree, build_command: str, reporter: Reporter):
         .check_returncode()
 
 
-def get_tree_meta(tree: Path):
+def read_tree_meta(tree: Path):
     file_path = tree / '_tree_meta.json'
     if not file_path.exists():
         return None
@@ -177,9 +210,9 @@ def list_trees(deploy_path: Path) -> Trees:
     current_tree_name = resolve_current_tree(deploy_path / 'current')
 
     def get_tree(tree_path: Path) -> Tree:
-        meta = get_tree_meta(tree_path)
-        git_ref = meta['git_ref'] if meta is not None else 'unknown_git_ref'
-        return Tree(tree_path.name, tree_path, git_ref)
+        meta = read_tree_meta(tree_path)
+        meta = TreeMeta.from_dict(meta)
+        return Tree(tree_path.name, tree_path, meta)
 
     return Trees(
         [get_tree(tree) for tree in tree_paths],
@@ -202,3 +235,49 @@ def select_deploy_id(deploy_id: str, config: Config, reporter: Reporter):
     reporter.info('Linking new version (%s)' % deploy_id)
     os.symlink(deploy_id, current)
     reporter.success('Deployed %s' % deploy_id)
+
+
+def purge_deployments(*,
+        deploy_root: Path,
+        git_dir: str,
+        dry_run: bool,
+        keep_latest: int = None,
+        older_than: datetime.datetime = None,
+        reporter: Reporter
+):
+    trees = list_trees(deploy_root)
+    # latest first
+    sorted_trees = sorted(
+        trees,
+        key=lambda tree: tree.meta.timestamp,
+        reverse=True
+    )
+
+    eligible_for_removal = [
+        tree for tree in sorted_trees
+        if not trees.is_selected(tree)
+    ]
+
+    reporter.info('%d trees eligible for removal' % len(eligible_for_removal))
+
+    if keep_latest is not None:
+        to_remove = eligible_for_removal[keep_latest:]
+
+    elif older_than is not None:
+        to_remove = [
+            tree for tree in eligible_for_removal
+            if tree.meta.timestamp < older_than
+        ]
+
+    else:
+        raise AssertionError('either keep_latest or older_than must be provided')
+
+    if dry_run:
+        reporter.info('Dry-run; not going to remove anything')
+    for tree in to_remove:
+        reporter.info('Remove {tree.tree_id}, created on {tree.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}'.format(tree=tree))
+        if not dry_run:
+            subprocess.run(
+                ['git', 'worktree', 'remove', '--force', str(tree.path)],
+                cwd=git_dir
+            ).check_returncode()

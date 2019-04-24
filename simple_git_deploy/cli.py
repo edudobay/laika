@@ -14,7 +14,7 @@ def _build_parser():
 
     modules = (
         'simple_git_deploy.cmd_%s' % cmd for cmd in (
-            'build', 'deploy', 'list', 'select'
+            'build', 'deploy', 'list', 'purge', 'select'
         )
     )
 
