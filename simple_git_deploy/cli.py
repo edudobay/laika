@@ -229,7 +229,7 @@ def list_trees(deploy_path: Path) -> Trees:
 
 def cmd_list(args, config: Config, reporter: Reporter):
     trees = list_trees(config.deploy_root)
-    for tree in trees:
+    for tree in sorted(trees, key=lambda tree: tree.tree_id):
         print('{selected:<1s} {id}'.format(
             selected='*' if trees.is_selected(tree) else '',
             id=tree.tree_id,
@@ -261,7 +261,10 @@ def cmd_select(args, config: Config, reporter: Reporter):
             reporter.error('No deployment trees available')
             sys.exit(1)
 
-        tree_ids = [tree.tree_id for tree in trees]
+        tree_ids = sorted(
+            [tree.tree_id for tree in trees],
+            reverse=True
+        )
 
         questions = [inquirer.List(
             'deploy_id',
