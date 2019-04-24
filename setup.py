@@ -17,6 +17,7 @@ setup(
         'Programming Language :: Python',
     ],
     install_requires=[
+        'dateparser>=0.7.0',
         'inquirer',
     ],
     packages=['simple_git_deploy'],
