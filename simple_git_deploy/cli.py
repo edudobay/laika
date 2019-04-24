@@ -86,7 +86,13 @@ def normalize_refname(refname):
     return re.sub(r'[^a-zA-Z0-9_-]', '--', refname)
 
 
-def prepare_new_tree(deploy_root: Path, git_ref: str, git_dir: str, reporter: Reporter):
+def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: str, reporter: Reporter):
+    if fetch_first:
+        # TODO: Allow fetching from different remote or from --all
+        reporter.info('Fetching from default remote')
+        subprocess.run(['git', 'fetch'], cwd=git_dir) \
+            .check_returncode()
+
     hash = git_rev_parse_short(git_ref, git_dir)
     full_hash = git_rev_parse(git_ref, git_dir)
     timestamp = datetime.datetime.utcnow()
@@ -131,13 +137,25 @@ def run_build(tree: Tree, build_command: str, reporter: Reporter):
 
 def cmd_build(args, config: Config, reporter: Reporter):
     reporter.info('Selecting git repository %s' % config.git_dir)
-    tree = prepare_new_tree(config.deploy_root, args.ref, config.git_dir, reporter)
+    tree = prepare_new_tree(
+        deploy_root=config.deploy_root,
+        fetch_first=args.fetch_first,
+        git_ref=args.ref,
+        git_dir=config.git_dir,
+        reporter=reporter
+    )
     run_build(tree, config.build_command, reporter)
 
 
 def cmd_deploy(args, config: Config, reporter: Reporter):
     reporter.info('Selecting git repository %s' % config.git_dir)
-    tree = prepare_new_tree(config.deploy_root, args.ref, config.git_dir, reporter)
+    tree = prepare_new_tree(
+        deploy_root=config.deploy_root,
+        fetch_first=args.fetch_first,
+        git_ref=args.ref,
+        git_dir=config.git_dir,
+        reporter=reporter
+    )
     run_build(tree, config.build_command, reporter)
     select_deploy_id(tree.tree_id, config, reporter)
 
@@ -265,10 +283,16 @@ def _build_parser():
 
     parser_build = subparsers.add_parser('build', help='prepare a new deployment tree, without actually deploying it')
     parser_build.add_argument('ref', help='the Git ref (commit, branch, tag) that should be prepared')
+    parser_build.add_argument(
+        '--no-fetch', dest='fetch_first', action='store_false',
+        help='don\'t fetch from remote before running Git commands')
     parser_build.set_defaults(func=cmd_build)
 
     parser_deploy = subparsers.add_parser('deploy', help='prepare a tree and deploy it')
     parser_deploy.add_argument('ref', help='the Git ref (commit, branch, tag) that should be deployed')
+    parser_deploy.add_argument(
+        '--no-fetch', dest='fetch_first', action='store_false',
+        help='don\'t fetch from remote before running Git commands')
     parser_deploy.set_defaults(func=cmd_deploy)
 
     parser_select = subparsers.add_parser('select', help='deploy an already prepared tree')
