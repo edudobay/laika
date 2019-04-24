@@ -113,6 +113,7 @@ def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir
         .check_returncode()
 
     write_tree_meta(path, {
+        'source_path': os.path.realpath(git_dir),
         'git_ref': git_ref,
         'hash': full_hash,
         'timestamp': timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
