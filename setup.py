@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='simple-git-deploy',
-    version='0.1.1',
+    version='0.2.1',
     description='Script for managing deployments from Git repositories',
     url='https://github.com/edudobay/simple-git-deploy',
     license='MIT',
