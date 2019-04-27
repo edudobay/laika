@@ -23,6 +23,9 @@ def cmd_select(args, config: Config, reporter: Reporter):
             default=trees.current_id,
         )]
         answers = inquirer.prompt(questions)
+        if answers is None:
+            return
+
         args.deploy_id = answers['deploy_id']
 
     select_deploy_id(args.deploy_id, config, reporter)
