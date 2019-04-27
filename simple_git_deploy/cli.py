@@ -3,12 +3,17 @@ import argparse
 import importlib
 import sys
 
+from . import __version__
 from .core import Config, Reporter
 
 
 def _build_parser():
     parser = argparse.ArgumentParser()
     parser.set_defaults(func=None)
+
+    parser.add_argument(
+        '--version', action='version', version=__version__,
+        help='show the program version and exit')
 
     subparsers = parser.add_subparsers(help='sub-commands')
 

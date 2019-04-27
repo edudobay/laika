@@ -1,8 +1,11 @@
 from setuptools import setup
 
+import simple_git_deploy
+
+
 setup(
     name='simple-git-deploy',
-    version='0.2.1',
+    version=simple_git_deploy.__version__,
     description='Script for managing deployments from Git repositories',
     url='https://github.com/edudobay/simple-git-deploy',
     license='MIT',
