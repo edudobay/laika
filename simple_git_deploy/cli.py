@@ -20,6 +20,10 @@ def _build_parser():
         default='deploy.ini',
         help='specify an alternate config file (default: %(default)s)')
 
+    parser.add_argument(
+        '--no-color', action='store_false', dest='color',
+        help='disable colors in output')
+
     subparsers = parser.add_subparsers(help='sub-commands')
 
     modules = (
@@ -38,7 +42,7 @@ def main():
     parser = _build_parser()
     args = parser.parse_args()
 
-    reporter = Reporter()
+    reporter = Reporter(color=args.color)
     config = Config.read(args.config_file)
 
     if args.func is None:
