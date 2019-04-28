@@ -1,4 +1,5 @@
 -f requirements.in
 
+mypy
 pip-tools
 pyflakes
