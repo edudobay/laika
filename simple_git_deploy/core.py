@@ -5,6 +5,8 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from abc import ABC, abstractmethod
+from typing import Iterable, List, Optional
 
 from .output import Reporter
 
@@ -32,6 +34,11 @@ class Config:
         return self.config['build']['run']
 
 
+    @property
+    def purge_what(self) -> Optional[str]:
+        return self.config['purge'].get('what')
+
+
     @classmethod
     def read(cls):
         config = configparser.ConfigParser()
@@ -40,6 +47,8 @@ class Config:
         config.read_dict({
             'dirs': {
                 'git': '.',
+            },
+            'purge': {
             },
         })
 

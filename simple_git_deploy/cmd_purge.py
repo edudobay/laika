@@ -8,7 +8,7 @@ from .core import Config, PurgeSpecification, Reporter, purge_deployments
 
 
 def cmd_purge(args, config: Config, reporter: Reporter):
-    what_to_purge = _find_what_to_purge(args)
+    what_to_purge = _find_what_to_purge(args, config)
     if what_to_purge is None:
         reporter.error('No valid purge settings found')
         sys.exit(1)
@@ -24,13 +24,29 @@ def cmd_purge(args, config: Config, reporter: Reporter):
     )
 
 
-def _find_what_to_purge(args) -> Optional[PurgeSpecification]:
+def _find_what_to_purge(args, config: Config) -> Optional[PurgeSpecification]:
     if args.keep_latest is not None:
         return PurgeSpecification.keep_latest(args.keep_latest)
     elif args.older_than is not None:
         return PurgeSpecification.discard_older_than(args.older_than)
-    else:
+
+    if config.purge_what is None:
         return None
+
+    try:
+        return parse_deployments_specification(config.purge_what)
+    except Exception:
+        return None
+
+
+def parse_deployments_specification(spec: str) -> PurgeSpecification:
+    spec_type, value = spec.split(' ', 1)
+    if spec_type == 'keep_latest':
+        return PurgeSpecification.keep_latest(non_negative_int(value))
+    elif spec_type == 'older_than':
+        return PurgeSpecification.discard_older_than(relative_time(value))
+
+    raise ValueError('invalid specification')
 
 
 def relative_time(string):
