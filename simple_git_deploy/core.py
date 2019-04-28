@@ -127,7 +127,7 @@ def normalize_refname(refname):
     return re.sub(r'[^a-zA-Z0-9_-]', '--', refname)
 
 
-def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: str, reporter: Reporter):
+def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: Path, reporter: Reporter):
     if fetch_first:
         # TODO: Allow fetching from different remote or from --all
         reporter.info('Fetching from default remote')
@@ -239,7 +239,7 @@ def select_deploy_id(deploy_id: str, config: Config, reporter: Reporter):
 
 def purge_deployments(*,
         deploy_root: Path,
-        git_dir: str,
+        git_dir: Path,
         dry_run: bool,
         keep_latest: int = None,
         older_than: datetime.datetime = None,
