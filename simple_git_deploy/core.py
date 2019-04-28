@@ -111,6 +111,9 @@ class PurgeSpecification(ABC):
     @abstractmethod
     def filter(self, trees: Iterable[Tree]) -> List[Tree]: pass
 
+    @abstractmethod
+    def describe(self) -> str: pass
+
     @classmethod
     def sort_latest_first(cls, trees: Iterable[Tree]):
         return sorted(
@@ -137,6 +140,9 @@ class KeepLatestN(PurgeSpecification):
     def filter(self, trees):
         return self.sort_latest_first(trees)[self.num_latest:]
 
+    def describe(self):
+        return 'Keeping %d latest deployments' % self.num_latest
+
 
 class DiscardOlderThan(PurgeSpecification):
     def __init__(self, oldest_allowed_datetime: datetime.datetime):
@@ -149,6 +155,9 @@ class DiscardOlderThan(PurgeSpecification):
             tree for tree in self.sort_latest_first(trees)
             if tree.meta.timestamp < self.oldest_allowed_datetime
         ]
+
+    def describe(self):
+        return 'Keeping deployments since %s' % self.oldest_allowed_datetime.isoformat(' ')
 
 
 def git_rev_parse_short(ref, gitdir=None):
@@ -294,12 +303,17 @@ def purge_deployments(*,
         if not trees.is_selected(tree)
     ]
 
-    reporter.info('%d trees eligible for removal' % len(eligible_for_removal))
+    reporter.info(what_to_purge.describe())
 
     to_remove = what_to_purge.filter(eligible_for_removal)
 
     if dry_run:
         reporter.info('Dry-run; not going to remove anything')
+
+    reporter.info('{selected} trees selected for removal, out of {eligible} that could be removed'.format(
+        eligible=len(eligible_for_removal),
+        selected=len(to_remove),
+    ))
     for tree in to_remove:
         reporter.info('Remove {tree.tree_id}, created on {tree.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}'.format(tree=tree))
         if not dry_run:
