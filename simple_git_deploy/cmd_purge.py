@@ -4,7 +4,8 @@ from typing import Optional
 
 import dateparser  # type: ignore
 
-from .core import Config, PurgeSpecification, Reporter, purge_deployments
+from .core import Config, Reporter
+from .purge import PurgeSpecification, purge_deployments
 
 
 def cmd_purge(args, config: Config, reporter: Reporter):
