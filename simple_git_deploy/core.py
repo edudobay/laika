@@ -172,10 +172,28 @@ def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir
     return Tree(tree_id, path, meta)
 
 
-def run_build(tree: Tree, build_command: str, reporter: Reporter):
+def run_build(
+        tree: Tree,
+        build_command: str,
+        reporter: Reporter,
+):
     reporter.info('Changing directory to %s' % tree.path)
     reporter.info('Running command: %s' % build_command)
-    subprocess.run(build_command, shell=True, cwd=tree.path) \
+
+    hydrated_environment = {
+        **os.environ,
+        'DIR_SOURCE': str(tree.meta.source_path),
+        'DIR_DEPLOY': str(tree.path),
+        'DEPLOY_GIT_REF': tree.meta.git_ref,
+        'DEPLOY_GIT_HASH': tree.meta.git_hash,
+    }
+
+    subprocess.run(
+        build_command,
+        shell=True,
+        cwd=tree.path,
+        env=hydrated_environment,
+    ) \
         .check_returncode()
 
 
