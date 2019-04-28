@@ -22,10 +22,10 @@ Requirements:
 Install via **pip**:
 
 ```
-$ pip install git+https://github.com/edudobay/simple-git-deploy.git
+$ pip install simple-git-deploy
 ```
 
-If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install` and before the URL.
+If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`.
 
 
 ## Usage
