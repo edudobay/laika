@@ -15,6 +15,11 @@ def _build_parser():
         '--version', action='version', version=__version__,
         help='show the program version and exit')
 
+    parser.add_argument(
+        '-C', '--config-file', metavar='FILE',
+        default='deploy.ini',
+        help='specify an alternate config file (default: %(default)s)')
+
     subparsers = parser.add_subparsers(help='sub-commands')
 
     modules = (
@@ -34,7 +39,7 @@ def main():
     args = parser.parse_args()
 
     reporter = Reporter()
-    config = Config.read()
+    config = Config.read(args.config_file)
 
     if args.func is None:
         parser.print_usage()

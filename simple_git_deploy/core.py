@@ -39,7 +39,7 @@ class Config:
 
 
     @classmethod
-    def read(cls):
+    def read(cls, filename):
         config = configparser.ConfigParser()
 
         # defaults
@@ -51,7 +51,7 @@ class Config:
             },
         })
 
-        config_files = ['deploy.ini']
+        config_files = [filename]
         if not config.read(config_files):
             raise RuntimeError('no configuration file could be read')
 
