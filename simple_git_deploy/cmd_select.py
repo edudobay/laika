@@ -1,4 +1,6 @@
-import inquirer
+import sys
+
+import inquirer  # type: ignore
 
 from .core import Config, Reporter, list_trees, select_deploy_id
 

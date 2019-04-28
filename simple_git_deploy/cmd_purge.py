@@ -1,7 +1,8 @@
 import argparse
-import dateparser
+import sys
 
 from .core import Config, Reporter, purge_deployments
+import dateparser  # type: ignore
 
 
 def cmd_purge(args, config: Config, reporter: Reporter):
