@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 from .output import Reporter
 
@@ -32,6 +33,11 @@ class Config:
         return self.config['build']['run']
 
 
+    @property
+    def purge_what(self) -> Optional[str]:
+        return self.config['purge'].get('what')
+
+
     @classmethod
     def read(cls):
         config = configparser.ConfigParser()
@@ -40,6 +46,8 @@ class Config:
         config.read_dict({
             'dirs': {
                 'git': '.',
+            },
+            'purge': {
             },
         })
 
@@ -235,49 +243,3 @@ def select_deploy_id(deploy_id: str, config: Config, reporter: Reporter):
     reporter.info('Linking new version (%s)' % deploy_id)
     os.symlink(deploy_id, current)
     reporter.success('Deployed %s' % deploy_id)
-
-
-def purge_deployments(*,
-        deploy_root: Path,
-        git_dir: Path,
-        dry_run: bool,
-        keep_latest: int = None,
-        older_than: datetime.datetime = None,
-        reporter: Reporter
-):
-    trees = list_trees(deploy_root)
-    # latest first
-    sorted_trees = sorted(
-        trees,
-        key=lambda tree: tree.meta.timestamp,
-        reverse=True
-    )
-
-    eligible_for_removal = [
-        tree for tree in sorted_trees
-        if not trees.is_selected(tree)
-    ]
-
-    reporter.info('%d trees eligible for removal' % len(eligible_for_removal))
-
-    if keep_latest is not None:
-        to_remove = eligible_for_removal[keep_latest:]
-
-    elif older_than is not None:
-        to_remove = [
-            tree for tree in eligible_for_removal
-            if tree.meta.timestamp < older_than
-        ]
-
-    else:
-        raise AssertionError('either keep_latest or older_than must be provided')
-
-    if dry_run:
-        reporter.info('Dry-run; not going to remove anything')
-    for tree in to_remove:
-        reporter.info('Remove {tree.tree_id}, created on {tree.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}'.format(tree=tree))
-        if not dry_run:
-            subprocess.run(
-                ['git', 'worktree', 'remove', '--force', str(tree.path)],
-                cwd=git_dir
-            ).check_returncode()
