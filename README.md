@@ -1,7 +1,7 @@
 # simple-git-deploy
 
-<a href="https://github.com/edudobay/simple-git-deploy/tags" alt="Tags">
-  <img src="https://img.shields.io/github/tag/edudobay/simple-git-deploy.svg" alt="Latest tag" /></a>
+<a href="https://pypi.org/project/simple-git-deploy/" title="Available on PyPI">
+  <img src="https://img.shields.io/pypi/v/simple-git-deploy.svg?style=for-the-badge" alt="Latest PyPI version"></a>
 
 A command-line utility for easy and reliable management of manual deployments from Git repositories.
 
