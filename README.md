@@ -25,7 +25,7 @@ Install via **pip**:
 $ pip install simple-git-deploy
 ```
 
-If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`.
+If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`, though other options can be better in the long run – e.g. you can use [pipsi](https://github.com/mitsuhiko/pipsi/), or simply create a **virtualenv** for your installed scripts.
 
 
 ## Usage
