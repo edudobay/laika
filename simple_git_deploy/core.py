@@ -107,6 +107,50 @@ class Trees:
         return tree.tree_id == self.current_id
 
 
+class PurgeSpecification(ABC):
+    @abstractmethod
+    def filter(self, trees: Iterable[Tree]) -> List[Tree]: pass
+
+    @classmethod
+    def sort_latest_first(cls, trees: Iterable[Tree]):
+        return sorted(
+            trees,
+            key=lambda tree: tree.meta.timestamp,
+            reverse=True
+        )
+
+    @classmethod
+    def keep_latest(cls, num_latest: int) -> 'PurgeSpecification':
+        return KeepLatestN(num_latest)
+
+    @classmethod
+    def discard_older_than(cls, oldest_allowed_datetime: datetime.datetime) -> 'PurgeSpecification':
+        return DiscardOlderThan(oldest_allowed_datetime)
+
+
+class KeepLatestN(PurgeSpecification):
+    def __init__(self, num_latest: int):
+        if not isinstance(num_latest, int) or num_latest < 0:
+            raise ValueError('num_latest must be a non-negative integer')
+        self.num_latest = num_latest
+
+    def filter(self, trees):
+        return self.sort_latest_first(trees)[self.num_latest:]
+
+
+class DiscardOlderThan(PurgeSpecification):
+    def __init__(self, oldest_allowed_datetime: datetime.datetime):
+        if not isinstance(oldest_allowed_datetime, datetime.datetime):
+            raise TypeError('oldest_allowed_datetime must be a datetime.datetime')
+        self.oldest_allowed_datetime = oldest_allowed_datetime
+
+    def filter(self, trees):
+        return [
+            tree for tree in self.sort_latest_first(trees)
+            if tree.meta.timestamp < self.oldest_allowed_datetime
+        ]
+
+
 def git_rev_parse_short(ref, gitdir=None):
     return subprocess.check_output(
         ['git', 'rev-parse', '--short', ref + '^{commit}'],
@@ -241,36 +285,18 @@ def purge_deployments(*,
         deploy_root: Path,
         git_dir: Path,
         dry_run: bool,
-        keep_latest: int = None,
-        older_than: datetime.datetime = None,
+        what_to_purge: PurgeSpecification,
         reporter: Reporter
 ):
     trees = list_trees(deploy_root)
-    # latest first
-    sorted_trees = sorted(
-        trees,
-        key=lambda tree: tree.meta.timestamp,
-        reverse=True
-    )
-
     eligible_for_removal = [
-        tree for tree in sorted_trees
+        tree for tree in trees
         if not trees.is_selected(tree)
     ]
 
     reporter.info('%d trees eligible for removal' % len(eligible_for_removal))
 
-    if keep_latest is not None:
-        to_remove = eligible_for_removal[keep_latest:]
-
-    elif older_than is not None:
-        to_remove = [
-            tree for tree in eligible_for_removal
-            if tree.meta.timestamp < older_than
-        ]
-
-    else:
-        raise AssertionError('either keep_latest or older_than must be provided')
+    to_remove = what_to_purge.filter(eligible_for_removal)
 
     if dry_run:
         reporter.info('Dry-run; not going to remove anything')
