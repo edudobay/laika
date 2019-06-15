@@ -10,6 +10,12 @@ from typing import Optional
 from .output import Reporter
 
 
+class ConfigError(RuntimeError): pass
+
+
+class ConfigFileNotFound(ConfigError): pass
+
+
 class Config:
     def __init__(self, config):
         self.config = config
@@ -53,7 +59,7 @@ class Config:
 
         config_files = [filename]
         if not config.read(config_files):
-            raise RuntimeError('no configuration file could be read')
+            raise ConfigFileNotFound(os.path.realpath(filename))
 
         return cls(config)
 

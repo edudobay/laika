@@ -4,7 +4,7 @@ import importlib
 import sys
 
 from . import __version__
-from .core import Config, Reporter
+from .core import Config, Reporter, ConfigFileNotFound
 
 
 def _build_parser():
@@ -43,7 +43,11 @@ def main():
     args = parser.parse_args()
 
     reporter = Reporter(color=args.color)
-    config = Config.read(args.config_file)
+    try:
+        config = Config.read(args.config_file)
+    except ConfigFileNotFound as e:
+        print('ERROR: Config file not found: %s' % e.args)
+        sys.exit(2)
 
     if args.func is None:
         parser.print_usage()
