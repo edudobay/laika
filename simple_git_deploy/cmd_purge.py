@@ -70,7 +70,7 @@ def non_negative_int(string):
 
 
 def register(subparsers):
-    parser = subparsers.add_parser('purge', help='remove old trees')
+    parser = subparsers.add_parser('purge', help='remove old builds')
     parser.add_argument(
         '--dry-run', action='store_true',
         help='don\'t remove anything, only print what would be removed')

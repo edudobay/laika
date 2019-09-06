@@ -1,15 +1,15 @@
-from .core import Config, Reporter, list_trees
+from .core import Config, Reporter, list_builds
 
 
 def cmd_list(args, config: Config, reporter: Reporter):
-    trees = list_trees(config.deploy_root)
-    for tree in sorted(trees, key=lambda tree: tree.tree_id):
+    builds = list_builds(config.deploy_root)
+    for build in sorted(builds, key=lambda build: build.build_id):
         print('{selected:<1s} {id}'.format(
-            selected='*' if trees.is_selected(tree) else '',
-            id=tree.tree_id,
+            selected='*' if builds.is_selected(build) else '',
+            id=build.build_id,
         ))
 
 
 def register(subparsers):
-    parser = subparsers.add_parser('list', help='list all prepared trees')
+    parser = subparsers.add_parser('list', help='list all prepared builds')
     parser.set_defaults(func=cmd_list)

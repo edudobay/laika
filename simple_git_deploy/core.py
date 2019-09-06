@@ -64,7 +64,7 @@ class Config:
         return cls(config)
 
 
-class TreeMeta:
+class BuildMeta:
     def __init__(self, source_path, git_ref, git_hash, timestamp):
         self.source_path = source_path
         self.git_ref = git_ref
@@ -96,29 +96,29 @@ class TreeMeta:
         )
 
 
-class Tree:
-    def __init__(self, tree_id: str, path: Path, meta: TreeMeta):
-        self.tree_id = tree_id
+class Build:
+    def __init__(self, build_id: str, path: Path, meta: BuildMeta):
+        self.build_id = build_id
         self.path = path
         self.meta = meta
 
 
-class Trees:
-    def __init__(self, trees, current_id):
-        self.trees = trees
+class Builds:
+    def __init__(self, builds, current_id):
+        self.builds = builds
         self.current_id = current_id
 
 
     def __iter__(self):
-        return iter(self.trees)
+        return iter(self.builds)
 
 
     def __bool__(self):
-        return bool(self.trees)
+        return bool(self.builds)
 
 
-    def is_selected(self, tree):
-        return tree.tree_id == self.current_id
+    def is_selected(self, build):
+        return build.build_id == self.current_id
 
 
 def git_rev_parse_short(ref, gitdir=None):
@@ -141,7 +141,7 @@ def normalize_refname(refname):
     return re.sub(r'[^a-zA-Z0-9_-]', '--', refname)
 
 
-def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: Path, reporter: Reporter):
+def checkout_tree_for_build(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: Path, reporter: Reporter):
     if fetch_first:
         # TODO: Allow fetching from different remote or from --all
         reporter.info('Fetching from default remote')
@@ -152,59 +152,59 @@ def prepare_new_tree(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir
     full_hash = git_rev_parse(git_ref, git_dir)
     timestamp = datetime.datetime.utcnow()
 
-    tree_id = '{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}'.format(
+    build_id = '{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}'.format(
         timestamp=timestamp,
         hash=hash,
         refname=normalize_refname(git_ref),
     )
 
-    path = deploy_root / tree_id
+    path = deploy_root / build_id
 
-    reporter.info('Creating working tree at %s with git ref %s' % (path, git_ref))
+    reporter.info('Checking out git ref {git_ref} at directory {path}'.format(git_ref=git_ref, path=path))
     subprocess.run(
         ['git', 'worktree', 'add', '--detach', str(path), git_ref],
         cwd=git_dir
     ) \
         .check_returncode()
 
-    meta = TreeMeta(
+    meta = BuildMeta(
         source_path=os.path.realpath(git_dir),
         git_ref=git_ref,
         git_hash=full_hash,
         timestamp=timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
     )
-    write_tree_meta(path, meta.to_dict())
+    write_build_meta(path, meta.to_dict())
 
-    return Tree(tree_id, path, meta)
+    return Build(build_id, path, meta)
 
 
 def run_build(
-        tree: Tree,
+        build: Build,
         build_command: str,
         reporter: Reporter,
 ):
-    reporter.info('Changing directory to %s' % tree.path)
+    reporter.info('Changing directory to %s' % build.path)
     reporter.info('Running command: %s' % build_command)
 
     hydrated_environment = {
         **os.environ,
-        'DIR_SOURCE': str(tree.meta.source_path),
-        'DIR_DEPLOY': str(tree.path),
-        'DEPLOY_GIT_REF': tree.meta.git_ref,
-        'DEPLOY_GIT_HASH': tree.meta.git_hash,
+        'DIR_SOURCE': str(build.meta.source_path),
+        'DIR_DEPLOY': str(build.path),
+        'DEPLOY_GIT_REF': build.meta.git_ref,
+        'DEPLOY_GIT_HASH': build.meta.git_hash,
     }
 
     subprocess.run(
         build_command,
         shell=True,
-        cwd=tree.path,
+        cwd=build.path,
         env=hydrated_environment,
     ) \
         .check_returncode()
 
 
-def read_tree_meta(tree: Path):
-    file_path = tree / '_tree_meta.json'
+def read_build_meta(build: Path):
+    file_path = build / '_tree_meta.json'
     if not file_path.exists():
         return None
 
@@ -212,47 +212,47 @@ def read_tree_meta(tree: Path):
         return json.load(stream)
 
 
-def write_tree_meta(tree: Path, meta: dict):
-    file_path = tree / '_tree_meta.json'
+def write_build_meta(build: Path, meta: dict):
+    file_path = build / '_tree_meta.json'
     with file_path.open('w') as stream:
         json.dump(meta, stream)
 
 
-def list_trees(deploy_path: Path) -> Trees:
-    tree_paths = sorted(
+def list_builds(deploy_path: Path) -> Builds:
+    build_paths = sorted(
         d
         for d in deploy_path.iterdir()
         if not d.is_symlink() and d.is_dir()
     )
 
-    def resolve_current_tree(tree):
-        if tree.is_symlink():
-            if not tree.is_dir():
-                raise RuntimeError('current tree is not symlink to dir: {}'.format(tree))
-            target = tree.resolve(strict=True)
+    def resolve_current_build(build):
+        if build.is_symlink():
+            if not build.is_dir():
+                raise RuntimeError('current build is not symlink to dir: {}'.format(build))
+            target = build.resolve(strict=True)
             if not target.parent.samefile(deploy_path):
-                raise RuntimeError('current tree does not point to dir in deploy path: {}'.format(tree))
+                raise RuntimeError('current build does not point to dir in deploy path: {}'.format(build))
 
             return target.name
-        elif tree.exists():
-            raise RuntimeError('current tree must be symlink to sibling directory: {}'.format(tree))
+        elif build.exists():
+            raise RuntimeError('current build must be symlink to sibling directory: {}'.format(build))
         else:
             return None
 
-    current_tree_name = resolve_current_tree(deploy_path / 'current')
+    current_build_name = resolve_current_build(deploy_path / 'current')
 
-    def get_tree(tree_path: Path) -> Tree:
-        meta = read_tree_meta(tree_path)
-        meta = TreeMeta.from_dict(meta)
-        return Tree(tree_path.name, tree_path, meta)
+    def get_build(build_path: Path) -> Build:
+        meta = read_build_meta(build_path)
+        meta = BuildMeta.from_dict(meta)
+        return Build(build_path.name, build_path, meta)
 
-    return Trees(
-        [get_tree(tree) for tree in tree_paths],
-        current_tree_name
+    return Builds(
+        [get_build(build) for build in build_paths],
+        current_build_name
     )
 
 
-def select_deploy_id(deploy_id: str, config: Config, reporter: Reporter):
+def deploy_prepared_build(deploy_id: str, config: Config, reporter: Reporter):
     root = config.deploy_root
 
     current = root / 'current'
@@ -262,7 +262,7 @@ def select_deploy_id(deploy_id: str, config: Config, reporter: Reporter):
 
     deploy_target = root / deploy_id
     if not deploy_target.is_dir():
-        raise RuntimeError('deployment tree must exist: {}'.format(deploy_target))
+        raise RuntimeError('build must exist: {}'.format(deploy_target))
 
     reporter.info('Linking new version (%s)' % deploy_id)
     os.symlink(deploy_id, current)

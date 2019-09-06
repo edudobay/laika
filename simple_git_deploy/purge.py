@@ -4,22 +4,22 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterable, List
 
-from .core import Tree, list_trees
+from .core import Build, list_builds
 from .output import Reporter
 
 
 class PurgeSpecification(ABC):
     @abstractmethod
-    def filter(self, trees: Iterable[Tree]) -> List[Tree]: pass
+    def filter(self, builds: Iterable[Build]) -> List[Build]: pass
 
     @abstractmethod
     def describe(self) -> str: pass
 
     @classmethod
-    def sort_latest_first(cls, trees: Iterable[Tree]):
+    def sort_latest_first(cls, builds: Iterable[Build]):
         return sorted(
-            trees,
-            key=lambda tree: tree.meta.timestamp,
+            builds,
+            key=lambda build: build.meta.timestamp,
             reverse=True
         )
 
@@ -38,8 +38,8 @@ class KeepLatestN(PurgeSpecification):
             raise ValueError('num_latest must be a non-negative integer')
         self.num_latest = num_latest
 
-    def filter(self, trees):
-        return self.sort_latest_first(trees)[self.num_latest:]
+    def filter(self, builds):
+        return self.sort_latest_first(builds)[self.num_latest:]
 
     def describe(self):
         return 'Keeping %d latest deployments' % self.num_latest
@@ -51,10 +51,10 @@ class DiscardOlderThan(PurgeSpecification):
             raise TypeError('oldest_allowed_datetime must be a datetime.datetime')
         self.oldest_allowed_datetime = oldest_allowed_datetime
 
-    def filter(self, trees):
+    def filter(self, builds):
         return [
-            tree for tree in self.sort_latest_first(trees)
-            if tree.meta.timestamp < self.oldest_allowed_datetime
+            build for build in self.sort_latest_first(builds)
+            if build.meta.timestamp < self.oldest_allowed_datetime
         ]
 
     def describe(self):
@@ -68,10 +68,10 @@ def purge_deployments(*,
         what_to_purge: PurgeSpecification,
         reporter: Reporter
 ):
-    trees = list_trees(deploy_root)
+    builds = list_builds(deploy_root)
     eligible_for_removal = [
-        tree for tree in trees
-        if not trees.is_selected(tree)
+        build for build in builds
+        if not builds.is_selected(build)
     ]
 
     reporter.info(what_to_purge.describe())
@@ -81,14 +81,14 @@ def purge_deployments(*,
     if dry_run:
         reporter.info('Dry-run; not going to remove anything')
 
-    reporter.info('{selected} trees selected for removal, out of {eligible} that could be removed'.format(
+    reporter.info('{selected} builds selected for removal, out of {eligible} that could be removed'.format(
         eligible=len(eligible_for_removal),
         selected=len(to_remove),
     ))
-    for tree in to_remove:
-        reporter.info('Remove {tree.tree_id}, created on {tree.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}'.format(tree=tree))
+    for build in to_remove:
+        reporter.info('Remove {build.build_id}, created on {build.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}'.format(build=build))
         if not dry_run:
             subprocess.run(
-                ['git', 'worktree', 'remove', '--force', str(tree.path)],
+                ['git', 'worktree', 'remove', '--force', str(build.path)],
                 cwd=git_dir
             ).check_returncode()
