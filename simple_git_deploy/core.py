@@ -19,7 +19,7 @@ class ConfigFileNotFound(ConfigError):
 
 
 class Config:
-    def __init__(self, config):
+    def __init__(self, config: configparser.ConfigParser):
         self.config = config
 
     def _get_dir(self, dir_spec: str) -> Path:
@@ -38,8 +38,8 @@ class Config:
         return self.config["build"]["run"]
 
     @property
-    def post_deploy_command(self) -> str:
-        return self.config["post_deploy"]["run"]
+    def post_deploy_command(self) -> Optional[str]:
+        return self.config.get("post_deploy", "run", fallback=None)
 
     @property
     def purge_what(self) -> Optional[str]:
@@ -254,7 +254,11 @@ def list_builds(deploy_path: Path) -> Builds:
 
 
 def post_deploy(build: Build, config: Config, reporter: Reporter):
-    run_command_on_build(config.post_deploy_command, build, config, reporter)
+    command = config.post_deploy_command
+    if not command:
+        return
+
+    run_command_on_build(command, build, config, reporter)
 
 
 def deploy_prepared_build(build: Build, config: Config, reporter: Reporter):
