@@ -121,6 +121,25 @@ class Builds:
         return build.build_id == self.current_id
 
 
+class BuildMetaFile:
+    _PATH = '_tree_meta.json'
+
+    @classmethod
+    def read(cls, build_dir: Path) -> BuildMeta:
+        file_path = build_dir / cls._PATH
+        if not file_path.exists():
+            raise FileNotFoundError(f'Build metadata file not found: {file_path}')
+
+        with file_path.open() as stream:
+            return BuildMeta.from_dict(json.load(stream))
+
+    @classmethod
+    def write(cls, build_dir: Path, meta: BuildMeta):
+        file_path = build_dir / cls._PATH
+        with file_path.open('w') as stream:
+            json.dump(meta.to_dict(), stream)
+
+
 def git_rev_parse_short(ref, gitdir=None):
     return subprocess.check_output(
         ['git', 'rev-parse', '--short', ref + '^{commit}'],
@@ -173,7 +192,7 @@ def checkout_tree_for_build(deploy_root: Path, fetch_first: bool, git_ref: str, 
         git_hash=full_hash,
         timestamp=timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
     )
-    write_build_meta(path, meta.to_dict())
+    BuildMetaFile.write(path, meta)
 
     return Build(build_id, path, meta)
 
@@ -203,21 +222,6 @@ def run_build(
         .check_returncode()
 
 
-def read_build_meta(build: Path):
-    file_path = build / '_tree_meta.json'
-    if not file_path.exists():
-        return None
-
-    with file_path.open() as stream:
-        return json.load(stream)
-
-
-def write_build_meta(build: Path, meta: dict):
-    file_path = build / '_tree_meta.json'
-    with file_path.open('w') as stream:
-        json.dump(meta, stream)
-
-
 def list_builds(deploy_path: Path) -> Builds:
     build_paths = sorted(
         d
@@ -242,8 +246,7 @@ def list_builds(deploy_path: Path) -> Builds:
     current_build_name = resolve_current_build(deploy_path / 'current')
 
     def get_build(build_path: Path) -> Build:
-        meta = read_build_meta(build_path)
-        meta = BuildMeta.from_dict(meta)
+        meta = BuildMetaFile.read(build_path)
         return Build(build_path.name, build_path, meta)
 
     return Builds(
