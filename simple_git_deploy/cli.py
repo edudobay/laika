@@ -12,24 +12,32 @@ def _build_parser():
     parser.set_defaults(func=None)
 
     parser.add_argument(
-        '--version', action='version', version=__version__,
-        help='show the program version and exit')
+        "--version",
+        action="version",
+        version=__version__,
+        help="show the program version and exit",
+    )
 
     parser.add_argument(
-        '-C', '--config-file', metavar='FILE',
-        default='deploy.ini',
-        help='specify an alternate config file (default: %(default)s)')
+        "-C",
+        "--config-file",
+        metavar="FILE",
+        default="deploy.ini",
+        help="specify an alternate config file (default: %(default)s)",
+    )
 
     parser.add_argument(
-        '--no-color', action='store_false', dest='color',
-        help='disable colors in output')
+        "--no-color",
+        action="store_false",
+        dest="color",
+        help="disable colors in output",
+    )
 
-    subparsers = parser.add_subparsers(help='sub-commands')
+    subparsers = parser.add_subparsers(help="sub-commands")
 
     modules = (
-        'simple_git_deploy.cmd_%s' % cmd for cmd in (
-            'build', 'deploy', 'list', 'purge', 'select'
-        )
+        "simple_git_deploy.cmd_%s" % cmd
+        for cmd in ("build", "deploy", "list", "purge", "select")
     )
 
     for module in (importlib.import_module(name) for name in modules):
@@ -46,7 +54,7 @@ def main():
     try:
         config = Config.read(args.config_file)
     except ConfigFileNotFound as e:
-        print('ERROR: Config file not found: %s' % e.args)
+        print("ERROR: Config file not found: %s" % e.args)
         sys.exit(2)
 
     if args.func is None:
@@ -56,5 +64,5 @@ def main():
     args.func(args, config, reporter)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

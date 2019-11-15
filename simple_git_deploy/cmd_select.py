@@ -10,30 +10,29 @@ def cmd_select(args, config: Config, reporter: Reporter):
         builds = list_builds(config.deploy_root)
 
         if not builds:
-            reporter.error('No builds available')
+            reporter.error("No builds available")
             sys.exit(1)
 
-        build_ids = sorted(
-            [build.build_id for build in builds],
-            reverse=True
-        )
+        build_ids = sorted([build.build_id for build in builds], reverse=True)
 
-        questions = [inquirer.List(
-            'deploy_id',
-            message='Select a build to deploy',
-            choices=build_ids,
-            default=builds.current_id,
-        )]
+        questions = [
+            inquirer.List(
+                "deploy_id",
+                message="Select a build to deploy",
+                choices=build_ids,
+                default=builds.current_id,
+            )
+        ]
         answers = inquirer.prompt(questions)
         if answers is None:
             return
 
-        args.deploy_id = answers['deploy_id']
+        args.deploy_id = answers["deploy_id"]
 
     deploy_prepared_build(args.deploy_id, config, reporter)
 
 
 def register(subparsers):
-    parser = subparsers.add_parser('select', help='deploy an already prepared build')
-    parser.add_argument('deploy_id', nargs='?', help='the ID of the prepared build')
+    parser = subparsers.add_parser("select", help="deploy an already prepared build")
+    parser.add_argument("deploy_id", nargs="?", help="the ID of the prepared build")
     parser.set_defaults(func=cmd_select)

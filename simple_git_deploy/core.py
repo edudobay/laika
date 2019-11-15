@@ -10,52 +10,45 @@ from typing import Optional
 from .output import Reporter
 
 
-class ConfigError(RuntimeError): pass
+class ConfigError(RuntimeError):
+    pass
 
 
-class ConfigFileNotFound(ConfigError): pass
+class ConfigFileNotFound(ConfigError):
+    pass
 
 
 class Config:
     def __init__(self, config):
         self.config = config
 
-
     def _get_dir(self, dir_spec: str) -> Path:
         return Path(os.path.realpath(os.path.expanduser(dir_spec)))
 
     @property
     def git_dir(self) -> Path:
-        return self._get_dir(self.config['dirs']['git'])
-
+        return self._get_dir(self.config["dirs"]["git"])
 
     @property
     def deploy_root(self) -> Path:
-        return self._get_dir(self.config['dirs']['deploy'])
-
+        return self._get_dir(self.config["dirs"]["deploy"])
 
     @property
     def build_command(self) -> str:
-        return self.config['build']['run']
-
+        return self.config["build"]["run"]
 
     @property
     def purge_what(self) -> Optional[str]:
-        return self.config['purge'].get('what')
-
+        return self.config["purge"].get("what")
 
     @classmethod
     def read(cls, filename):
         config = configparser.ConfigParser()
 
         # defaults
-        config.read_dict({
-            'dirs': {
-                'git': '.',
-            },
-            'purge': {
-            },
-        })
+        config.read_dict(
+            {"dirs": {"git": ".",}, "purge": {},}
+        )
 
         config_files = [filename]
         if not config.read(config_files):
@@ -71,24 +64,24 @@ class BuildMeta:
         self.git_hash = git_hash
         self.timestamp = timestamp
 
-
     @classmethod
     def from_dict(cls, d):
         d = dict(d)
-        version = d.pop('version', '0')
+        version = d.pop("version", "0")
 
-        d['source_path'] = d.pop('source_path', None)
-        d['timestamp'] = datetime.datetime.strptime(d['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+        d["source_path"] = d.pop("source_path", None)
+        d["timestamp"] = datetime.datetime.strptime(
+            d["timestamp"], "%Y-%m-%dT%H:%M:%SZ"
+        )
 
-        if version == '0':
-            d['git_hash'] = d.pop('hash', None)
+        if version == "0":
+            d["git_hash"] = d.pop("hash", None)
 
         return cls(**d)
 
-
     def to_dict(self):
         return dict(
-            version='1',
+            version="1",
             source_path=self.source_path,
             git_ref=self.git_ref,
             git_hash=self.git_hash,
@@ -108,27 +101,24 @@ class Builds:
         self.builds = builds
         self.current_id = current_id
 
-
     def __iter__(self):
         return iter(self.builds)
 
-
     def __bool__(self):
         return bool(self.builds)
-
 
     def is_selected(self, build):
         return build.build_id == self.current_id
 
 
 class BuildMetaFile:
-    _PATH = '_tree_meta.json'
+    _PATH = "_tree_meta.json"
 
     @classmethod
     def read(cls, build_dir: Path) -> BuildMeta:
         file_path = build_dir / cls._PATH
         if not file_path.exists():
-            raise FileNotFoundError(f'Build metadata file not found: {file_path}')
+            raise FileNotFoundError(f"Build metadata file not found: {file_path}")
 
         with file_path.open() as stream:
             return BuildMeta.from_dict(json.load(stream))
@@ -136,61 +126,64 @@ class BuildMetaFile:
     @classmethod
     def write(cls, build_dir: Path, meta: BuildMeta):
         file_path = build_dir / cls._PATH
-        with file_path.open('w') as stream:
+        with file_path.open("w") as stream:
             json.dump(meta.to_dict(), stream)
 
 
 def git_rev_parse_short(ref, gitdir=None):
     return subprocess.check_output(
-        ['git', 'rev-parse', '--short', ref + '^{commit}'],
+        ["git", "rev-parse", "--short", ref + "^{commit}"],
         cwd=gitdir,
-        encoding='utf-8',
+        encoding="utf-8",
     ).strip()
 
 
 def git_rev_parse(ref, gitdir=None):
     return subprocess.check_output(
-        ['git', 'rev-parse', ref + '^{commit}'],
-        cwd=gitdir,
-        encoding='utf-8',
+        ["git", "rev-parse", ref + "^{commit}"], cwd=gitdir, encoding="utf-8",
     ).strip()
 
 
 def normalize_refname(refname):
-    return re.sub(r'[^a-zA-Z0-9_-]', '--', refname)
+    return re.sub(r"[^a-zA-Z0-9_-]", "--", refname)
 
 
-def checkout_tree_for_build(deploy_root: Path, fetch_first: bool, git_ref: str, git_dir: Path, reporter: Reporter):
+def checkout_tree_for_build(
+    deploy_root: Path,
+    fetch_first: bool,
+    git_ref: str,
+    git_dir: Path,
+    reporter: Reporter,
+):
     if fetch_first:
         # TODO: Allow fetching from different remote or from --all
-        reporter.info('Fetching from default remote')
-        subprocess.run(['git', 'fetch'], cwd=git_dir) \
-            .check_returncode()
+        reporter.info("Fetching from default remote")
+        subprocess.run(["git", "fetch"], cwd=git_dir).check_returncode()
 
     hash = git_rev_parse_short(git_ref, git_dir)
     full_hash = git_rev_parse(git_ref, git_dir)
     timestamp = datetime.datetime.utcnow()
 
-    build_id = '{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}'.format(
-        timestamp=timestamp,
-        hash=hash,
-        refname=normalize_refname(git_ref),
+    build_id = "{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}".format(
+        timestamp=timestamp, hash=hash, refname=normalize_refname(git_ref),
     )
 
     path = deploy_root / build_id
 
-    reporter.info('Checking out git ref {git_ref} at directory {path}'.format(git_ref=git_ref, path=path))
+    reporter.info(
+        "Checking out git ref {git_ref} at directory {path}".format(
+            git_ref=git_ref, path=path
+        )
+    )
     subprocess.run(
-        ['git', 'worktree', 'add', '--detach', str(path), git_ref],
-        cwd=git_dir
-    ) \
-        .check_returncode()
+        ["git", "worktree", "add", "--detach", str(path), git_ref], cwd=git_dir
+    ).check_returncode()
 
     meta = BuildMeta(
         source_path=os.path.realpath(git_dir),
         git_ref=git_ref,
         git_hash=full_hash,
-        timestamp=timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        timestamp=timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     BuildMetaFile.write(path, meta)
 
@@ -198,75 +191,72 @@ def checkout_tree_for_build(deploy_root: Path, fetch_first: bool, git_ref: str, 
 
 
 def run_build(
-        build: Build,
-        build_command: str,
-        reporter: Reporter,
+    build: Build, build_command: str, reporter: Reporter,
 ):
-    reporter.info('Changing directory to %s' % build.path)
-    reporter.info('Running command: %s' % build_command)
+    reporter.info("Changing directory to %s" % build.path)
+    reporter.info("Running command: %s" % build_command)
 
     hydrated_environment = {
         **os.environ,
-        'DIR_SOURCE': str(build.meta.source_path),
-        'DIR_DEPLOY': str(build.path),
-        'DEPLOY_GIT_REF': build.meta.git_ref,
-        'DEPLOY_GIT_HASH': build.meta.git_hash,
+        "DIR_SOURCE": str(build.meta.source_path),
+        "DIR_DEPLOY": str(build.path),
+        "DEPLOY_GIT_REF": build.meta.git_ref,
+        "DEPLOY_GIT_HASH": build.meta.git_hash,
     }
 
     subprocess.run(
-        build_command,
-        shell=True,
-        cwd=build.path,
-        env=hydrated_environment,
-    ) \
-        .check_returncode()
+        build_command, shell=True, cwd=build.path, env=hydrated_environment,
+    ).check_returncode()
 
 
 def list_builds(deploy_path: Path) -> Builds:
     build_paths = sorted(
-        d
-        for d in deploy_path.iterdir()
-        if not d.is_symlink() and d.is_dir()
+        d for d in deploy_path.iterdir() if not d.is_symlink() and d.is_dir()
     )
 
     def resolve_current_build(build):
         if build.is_symlink():
             if not build.is_dir():
-                raise RuntimeError('current build is not symlink to dir: {}'.format(build))
+                raise RuntimeError(
+                    "current build is not symlink to dir: {}".format(build)
+                )
             target = build.resolve(strict=True)
             if not target.parent.samefile(deploy_path):
-                raise RuntimeError('current build does not point to dir in deploy path: {}'.format(build))
+                raise RuntimeError(
+                    "current build does not point to dir in deploy path: {}".format(
+                        build
+                    )
+                )
 
             return target.name
         elif build.exists():
-            raise RuntimeError('current build must be symlink to sibling directory: {}'.format(build))
+            raise RuntimeError(
+                "current build must be symlink to sibling directory: {}".format(build)
+            )
         else:
             return None
 
-    current_build_name = resolve_current_build(deploy_path / 'current')
+    current_build_name = resolve_current_build(deploy_path / "current")
 
     def get_build(build_path: Path) -> Build:
         meta = BuildMetaFile.read(build_path)
         return Build(build_path.name, build_path, meta)
 
-    return Builds(
-        [get_build(build) for build in build_paths],
-        current_build_name
-    )
+    return Builds([get_build(build) for build in build_paths], current_build_name)
 
 
 def deploy_prepared_build(deploy_id: str, config: Config, reporter: Reporter):
     root = config.deploy_root
 
-    current = root / 'current'
+    current = root / "current"
     if current.is_symlink():
-        reporter.info('Unlinking current version (%s)' % os.readlink(current))
+        reporter.info("Unlinking current version (%s)" % os.readlink(current))
         os.unlink(current)
 
     deploy_target = root / deploy_id
     if not deploy_target.is_dir():
-        raise RuntimeError('build must exist: {}'.format(deploy_target))
+        raise RuntimeError("build must exist: {}".format(deploy_target))
 
-    reporter.info('Linking new version (%s)' % deploy_id)
+    reporter.info("Linking new version (%s)" % deploy_id)
     os.symlink(deploy_id, current)
-    reporter.success('Deployed %s' % deploy_id)
+    reporter.success("Deployed %s" % deploy_id)
