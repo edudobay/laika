@@ -38,6 +38,10 @@ class Config:
         return self.config["build"]["run"]
 
     @property
+    def post_deploy_command(self) -> str:
+        return self.config["post_deploy"]["run"]
+
+    @property
     def purge_what(self) -> Optional[str]:
         return self.config["purge"].get("what")
 
@@ -190,11 +194,11 @@ def checkout_tree_for_build(
     return Build(build_id, path, meta)
 
 
-def run_build(
-    build: Build, build_command: str, reporter: Reporter,
+def run_command_on_build(
+    command: str, build: Build, config: Config, reporter: Reporter
 ):
     reporter.info("Changing directory to %s" % build.path)
-    reporter.info("Running command: %s" % build_command)
+    reporter.info("Running command: %s" % command)
 
     hydrated_environment = {
         **os.environ,
@@ -205,8 +209,12 @@ def run_build(
     }
 
     subprocess.run(
-        build_command, shell=True, cwd=build.path, env=hydrated_environment,
+        command, shell=True, cwd=build.path, env=hydrated_environment,
     ).check_returncode()
+
+
+def run_build(build: Build, config: Config, reporter: Reporter):
+    run_command_on_build(config.build_command, build, config, reporter)
 
 
 def list_builds(deploy_path: Path) -> Builds:
@@ -245,7 +253,12 @@ def list_builds(deploy_path: Path) -> Builds:
     return Builds([get_build(build) for build in build_paths], current_build_name)
 
 
-def deploy_prepared_build(deploy_id: str, config: Config, reporter: Reporter):
+def post_deploy(build: Build, config: Config, reporter: Reporter):
+    run_command_on_build(config.post_deploy_command, build, config, reporter)
+
+
+def deploy_prepared_build(build: Build, config: Config, reporter: Reporter):
+    deploy_id = build.build_id
     root = config.deploy_root
 
     current = root / "current"
@@ -259,4 +272,8 @@ def deploy_prepared_build(deploy_id: str, config: Config, reporter: Reporter):
 
     reporter.info("Linking new version (%s)" % deploy_id)
     os.symlink(deploy_id, current)
+    reporter.success("Activated deployment %s" % deploy_id)
+
+    post_deploy(build, config, reporter)
+
     reporter.success("Deployed %s" % deploy_id)
