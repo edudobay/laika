@@ -266,16 +266,15 @@ def deploy_prepared_build(build: Build, config: Config, reporter: Reporter):
     root = config.deploy_root
 
     current = root / "current"
-    if current.is_symlink():
-        reporter.info("Unlinking current version (%s)" % os.readlink(current))
-        os.unlink(current)
+    current_new = root / "current.new"
 
     deploy_target = root / deploy_id
     if not deploy_target.is_dir():
         raise RuntimeError("build must exist: {}".format(deploy_target))
 
     reporter.info("Linking new version (%s)" % deploy_id)
-    os.symlink(deploy_id, current)
+    os.symlink(deploy_id, current_new)
+    os.replace(current_new, current)
     reporter.success("Activated deployment %s" % deploy_id)
 
     post_deploy(build, config, reporter)
