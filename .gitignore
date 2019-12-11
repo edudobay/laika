@@ -5,6 +5,9 @@ __pycache__/
 build/
 dist/
 
+# For a library, the lockfile does not need to be versioned
+poetry.lock
+
 venv/
 
 .mypy_cache/

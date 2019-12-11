@@ -1,13 +1,24 @@
 ## Development setup
 
-* Create a Python virtual environment (Python ≥ 3.5)
-    ```
-    $ python3 -m venv venv
-    ```
-* Activate it, then install dependencies
-    ```
-    $ source venv/bin/activate
-    (venv)$ pip install -e . -r requirements.txt -r requirements-dev.txt
-    ```
+### Requirements
 
-[pip-tools](https://github.com/jazzband/pip-tools) is used for managing dependencies. See more info there and in [A successful pip-tools workflow for managing Python package requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html).
+* [GNU Make][]
+* [Poetry][] package manager
+* Python ≥ 3.6
+
+
+### Setup
+
+At the root of this repository:
+
+* Run `make setup`
+
+
+## Common tasks
+
+* Source code formatting: `make format`
+* Run all tests: `make test`
+
+
+[Poetry]: https://poetry.eustace.io/
+[GNU Make]: https://www.gnu.org/software/make/

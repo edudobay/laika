@@ -10,7 +10,7 @@ def cmd_build(args, config: Config, reporter: Reporter):
         git_dir=config.git_dir,
         reporter=reporter,
     )
-    run_build(build, config.build_command, reporter)
+    run_build(build, config, reporter)
 
 
 def register(subparsers):
