@@ -2,6 +2,7 @@ import os.path
 import shlex
 import subprocess
 
+from assertpy import assert_that
 from behave import *
 
 from testing_helpers.fixtures.git import TARGET_DIR, SOURCE_DIR
@@ -39,10 +40,5 @@ def step_impl(context, expected_status_code):
     :type context: behave.runner.Context
     :type expected_status_code: int
     """
-    actual_status_code = context.last_command_status_code
-    assert (
-            actual_status_code == expected_status_code
-    ), f"Returned status code {actual_status_code} doesn't match expected {expected_status_code}"
-
-    output = context.last_command_output
-    assert output == context.text, f"Actual output {output!r} doesn't match expected {context.text!r}"
+    assert_that(context.last_command_status_code).is_equal_to(expected_status_code)
+    assert_that(context.last_command_output).is_equal_to(context.text)
