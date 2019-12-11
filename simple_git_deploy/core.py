@@ -209,8 +209,8 @@ def run_command_on_build(
     }
 
     subprocess.run(
-        command, shell=True, cwd=build.path, env=hydrated_environment,
-    ).check_returncode()
+        command, shell=True, cwd=build.path, env=hydrated_environment, check=True
+    )
 
 
 def run_build(build: Build, config: Config, reporter: Reporter):

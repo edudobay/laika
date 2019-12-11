@@ -42,3 +42,12 @@ def step_impl(context, expected_status_code):
     """
     assert_that(context.last_command_status_code).is_equal_to(expected_status_code)
     assert_that(context.last_command_output).is_equal_to(context.text)
+
+
+@then("we should get status code {expected_status_code:d}")
+def step_impl(context, expected_status_code):
+    """
+    :type context: behave.runner.Context
+    :type expected_status_code: int
+    """
+    assert_that(context.last_command_status_code).is_equal_to(expected_status_code)
