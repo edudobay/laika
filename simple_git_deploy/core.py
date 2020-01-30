@@ -194,6 +194,14 @@ def checkout_tree_for_build(
     return Build(build_id, path, meta)
 
 
+def load_build(
+    build_id: str,
+    deploy_root: Path,
+) -> Build:
+    path = deploy_root / build_id
+    return get_build(path)
+
+
 def run_command_on_build(
     command: str, build: Build, config: Config, reporter: Reporter
 ):
@@ -215,6 +223,11 @@ def run_command_on_build(
 
 def run_build(build: Build, config: Config, reporter: Reporter):
     run_command_on_build(config.build_command, build, config, reporter)
+
+
+def get_build(build_path: Path) -> Build:
+    meta = BuildMetaFile.read(build_path)
+    return Build(build_path.name, build_path, meta)
 
 
 def list_builds(deploy_path: Path) -> Builds:
@@ -245,10 +258,6 @@ def list_builds(deploy_path: Path) -> Builds:
             return None
 
     current_build_name = resolve_current_build(deploy_path / "current")
-
-    def get_build(build_path: Path) -> Build:
-        meta = BuildMetaFile.read(build_path)
-        return Build(build_path.name, build_path, meta)
 
     return Builds([get_build(build) for build in build_paths], current_build_name)
 

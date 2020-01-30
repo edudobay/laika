@@ -2,7 +2,7 @@ import sys
 
 import inquirer  # type: ignore
 
-from .core import Config, Reporter, list_builds, deploy_prepared_build
+from .core import Config, Reporter, list_builds, load_build, deploy_prepared_build
 
 
 def cmd_select(args, config: Config, reporter: Reporter):
@@ -29,7 +29,9 @@ def cmd_select(args, config: Config, reporter: Reporter):
 
         args.deploy_id = answers["deploy_id"]
 
-    deploy_prepared_build(args.deploy_id, config, reporter)
+    build_id = args.deploy_id
+    build = load_build(build_id, config.deploy_root)
+    deploy_prepared_build(build, config, reporter)
 
 
 def register(subparsers):
