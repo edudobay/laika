@@ -1,26 +1,27 @@
 import pytest
 
 from testing_helpers.dirs import DirectoryContext
+from testing_helpers.git import GitRepo
 
 
 @pytest.yield_fixture
-def git_dir():
+def git_repo():
     with DirectoryContext() as tempdir:
-        tempdir.run(["git", "init", "."])
-        yield tempdir
+        repo = GitRepo(tempdir.path)
+        repo.create()
+        yield repo
 
 
 # noinspection PyShadowingNames
-def test_one(git_dir: DirectoryContext):
-    with open(git_dir.path / "hello.txt", "w") as stream:
+def test_one(git_repo: GitRepo):
+    with open(git_repo.dirname / "hello.txt", "w") as stream:
         stream.write("hello world")
 
-    git_dir.run(["git", "add", "."])
-    git_dir.run(["git", "commit", "-m", "C1"])
+    git_repo.run(["git", "add", "."])
+    git_repo.run(["git", "commit", "-m", "C1"])
 
-    cmd = git_dir.run(
+    cmd = git_repo.run(
         ["git", "log", "--oneline", "--pretty=format:%s"],
-        capture_output=True,
         encoding='ascii'
     )
     assert cmd.stdout == 'C1'

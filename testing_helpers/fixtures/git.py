@@ -1,33 +1,14 @@
 import configparser
 import os
-import pathlib
-import subprocess
 import textwrap
 
 from behave import fixture
 
 from testing_helpers.dirs import DirectoryContext
+from testing_helpers.git import GitRepo
 
 SOURCE_DIR = "source"
 TARGET_DIR = "target"
-
-
-class GitRepo:
-    INITIAL_BRANCH = "main"
-
-    def __init__(self, dirname: pathlib.Path):
-        self.dirname = dirname
-
-    def create(self):
-        os.makedirs(self.dirname, exist_ok=True)
-        self.run([
-            "git", "init",
-            "--initial-branch=" + self.INITIAL_BRANCH,
-            "."
-        ])
-
-    def run(self, args, **kwargs):
-        return subprocess.run(args, cwd=self.dirname, check=True, capture_output=True)
 
 
 @fixture(name="fixture.root_dir")
