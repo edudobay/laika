@@ -13,14 +13,18 @@ TARGET_DIR = "target"
 
 
 class GitRepo:
+    INITIAL_BRANCH = "main"
+
     def __init__(self, dirname: pathlib.Path):
         self.dirname = dirname
 
     def create(self):
         os.makedirs(self.dirname, exist_ok=True)
-        subprocess.run(
-            ["git", "init", "."], cwd=self.dirname, check=True, capture_output=True
-        )
+        self.run([
+            "git", "init",
+            "--initial-branch=" + self.INITIAL_BRANCH,
+            "."
+        ])
 
     def run(self, args, **kwargs):
         return subprocess.run(args, cwd=self.dirname, check=True, capture_output=True)
