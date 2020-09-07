@@ -16,7 +16,7 @@ The meaning of _build_ is defined by the user; it can be any command runnable fr
 
 Requirements:
 
-* Python ≥ 3.5 (has been tested with 3.6 and 3.7 but should work with 3.5 nonetheless)
+* Python ≥ 3.6 (has been tested with 3.6 and 3.7)
 * Git ≥ 2.7 (depends on the `git worktree` feature)
 
 Install via **pip**:
@@ -25,7 +25,7 @@ Install via **pip**:
 $ pip install simple-git-deploy
 ```
 
-If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`, though other options can be better in the long run – e.g. you can use [pipsi](https://github.com/mitsuhiko/pipsi/), or simply create a **virtualenv** for your installed scripts.
+If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`, though other options can be better in the long run – e.g. you can use [pipx][], or simply create a **virtualenv** for your installed scripts.
 
 
 ## Usage
@@ -73,3 +73,6 @@ You can purge old deployments with `simple-git-deploy purge`. There are two ways
 ## Development setup
 
 If you want to set this project up for development, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+
+[pipx]: https://github.com/pipxproject/pipx/
