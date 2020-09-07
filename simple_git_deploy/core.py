@@ -194,10 +194,7 @@ def checkout_tree_for_build(
     return Build(build_id, path, meta)
 
 
-def load_build(
-    build_id: str,
-    deploy_root: Path,
-) -> Build:
+def load_build(build_id: str, deploy_root: Path,) -> Build:
     path = deploy_root / build_id
     return get_build(path)
 

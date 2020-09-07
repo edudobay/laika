@@ -21,9 +21,6 @@ def test_one(git_repo: GitRepo):
     git_repo.run(["git", "commit", "-m", "C1"])
 
     cmd = git_repo.run(
-        ["git", "log", "--oneline", "--pretty=format:%s"],
-        encoding='ascii'
+        ["git", "log", "--oneline", "--pretty=format:%s"], encoding="ascii"
     )
-    assert cmd.stdout == 'C1'
-
-
+    assert cmd.stdout == "C1"
