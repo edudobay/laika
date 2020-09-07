@@ -17,4 +17,12 @@ def test_one(git_dir: DirectoryContext):
 
     git_dir.run(["git", "add", "."])
     git_dir.run(["git", "commit", "-m", "C1"])
-    git_dir.run(["git", "log", "--oneline"])
+
+    cmd = git_dir.run(
+        ["git", "log", "--oneline", "--pretty=format:%s"],
+        capture_output=True,
+        encoding='ascii'
+    )
+    assert cmd.stdout == 'C1'
+
+
