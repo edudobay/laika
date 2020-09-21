@@ -1,8 +1,10 @@
 export VENV_BINDIR := $(shell dirname $(shell poetry run which python))
 export PATH := $(VENV_BINDIR):$(PATH)
 
+SRC_DIR = laika
+
 FORMAT_DIRS = \
-	simple_git_deploy \
+	$(SRC_DIR) \
 	features \
 	tests \
 	testing_helpers
@@ -32,7 +34,7 @@ format-check:
 	black --check $(FORMAT_DIRS)
 
 type-check:
-	mypy simple_git_deploy
+	mypy $(SRC_DIR)
 
 test: test_unit test_bdd
 

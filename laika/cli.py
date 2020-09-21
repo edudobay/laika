@@ -36,8 +36,7 @@ def _build_parser():
     subparsers = parser.add_subparsers(help="sub-commands")
 
     modules = (
-        "simple_git_deploy.cmd_%s" % cmd
-        for cmd in ("build", "deploy", "list", "purge", "select")
+        "laika.cmd_%s" % cmd for cmd in ("build", "deploy", "list", "purge", "select")
     )
 
     for module in (importlib.import_module(name) for name in modules):
