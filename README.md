@@ -30,9 +30,9 @@ If this fails and you have no idea what to do, you can try adding the `--user` o
 
 ## Usage
 
-After [installing this utility](#installation), you can run `simple-git-deploy --help` for basic usage instructions.
+After [installing this utility](#installation), you can run `laika --help` for basic usage instructions.
 
-The easiest way is to run `simple-git-deploy deploy <git-branch-name>`. But before first usage you must create a `deploy.ini` file with at least the settings below (look further for an example):
+The easiest way is to run `laika deploy <git-branch-name>`. But before first usage you must create a `deploy.ini` file with at least the settings below (look further for an example):
 
 * `dirs.deploy`: directory where your application will be deployed. The current deployment will be available at `current` under this directory. This will be a symlink to the actual deployment directory.
 
@@ -64,7 +64,7 @@ run = npm install && npm run build
 
 ### Purging old deployments
 
-You can purge old deployments with `simple-git-deploy purge`. There are two ways to specify what exactly is to be removed:
+You can purge old deployments with `laika purge`. There are two ways to specify what exactly is to be removed:
 
 * `--keep-latest N`: keep only the latest _N_ deployments (other than the current one). With _N=0_, only the current deployment is kept, and with _N=1_ only one deployment other than the current is kept.
 * `--older-than DATETIME`: discard deployments with a timestamp strictly older than the given date/time. A wide range of both absolute and relative formats is accepted; see the [dateparser documentation](https://dateparser.readthedocs.io/en/latest/) for full information. Common cases may be written as `10d`, `1w` (10 days and 1 week, respectively).

@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 [tool.poetry.scripts]
-simple-git-deploy = "simple_git_deploy.cli:main"
+laika = "laika.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.5"
