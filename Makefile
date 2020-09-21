@@ -7,15 +7,32 @@ FORMAT_DIRS = \
 	tests \
 	testing_helpers
 
-.PHONY: setup format test test_unit test_bdd
+.PHONY: all \
+	setup setup-venv setup-hooks \
+	pre-commit \
+	format type-check \
+	test test_unit test_bdd
 
 all:
 
-setup:
+setup: setup-venv setup-hooks
+
+setup-venv:
 	poetry install
+
+setup-hooks:
+	development/setup-hooks.sh
+
+pre-commit: format-check type-check
 
 format:
 	black $(FORMAT_DIRS)
+
+format-check:
+	black --check $(FORMAT_DIRS)
+
+type-check:
+	mypy simple_git_deploy
 
 test: test_unit test_bdd
 
