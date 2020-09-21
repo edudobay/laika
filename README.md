@@ -1,4 +1,4 @@
-# simple-git-deploy
+# Laika 🐶
 
 <a href="https://pypi.org/project/simple-git-deploy/" title="Available on PyPI">
   <img src="https://img.shields.io/pypi/v/simple-git-deploy.svg?style=for-the-badge" alt="Latest PyPI version"></a>

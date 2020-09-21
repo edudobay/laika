@@ -5,8 +5,8 @@ description = "A command-line utility for easy and reliable management of manual
 authors = ["Eduardo Dobay <edudobay@gmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
-homepage = "https://github.com/edudobay/simple-git-deploy"
-repository = "https://github.com/edudobay/simple-git-deploy"
+homepage = "https://github.com/edudobay/laika"
+repository = "https://github.com/edudobay/laika"
 keywords = ["deployment", "automation", "git"]
 classifiers = [
     "Development Status :: 4 - Beta",
