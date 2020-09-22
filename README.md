@@ -1,7 +1,7 @@
 # Laika 🐶
 
-<a href="https://pypi.org/project/simple-git-deploy/" title="Available on PyPI">
-  <img src="https://img.shields.io/pypi/v/simple-git-deploy.svg?style=for-the-badge" alt="Latest PyPI version"></a>
+<a href="https://pypi.org/project/laika-deploy/" title="Available on PyPI">
+  <img src="https://img.shields.io/pypi/v/laika-deploy.svg?style=for-the-badge" alt="Latest PyPI version"></a>
 
 A command-line utility for easy and reliable management of manual deployments from Git repositories.
 
@@ -22,7 +22,7 @@ Requirements:
 Install via **pip**:
 
 ```
-$ pip install simple-git-deploy
+$ pip install laika-deploy
 ```
 
 If this fails and you have no idea what to do, you can try adding the `--user` option after `pip install`, though other options can be better in the long run – e.g. you can use [pipx][], or simply create a **virtualenv** for your installed scripts.
