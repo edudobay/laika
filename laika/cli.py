@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import importlib
+import warnings
 import sys
 
 from . import __version__
@@ -47,6 +48,18 @@ def _build_parser():
 
 def main():
     parser = _build_parser()
+
+    if parser.prog.endswith("simple-git-deploy"):
+        from textwrap import dedent
+
+        msg = dedent(
+            """\
+            simple-git-deploy has been renamed to laika. Please switch to the new command.
+            The old command will be removed in the next release.
+            """
+        )
+        warnings.warn(msg, FutureWarning)
+
     args = parser.parse_args()
 
     reporter = Reporter(color=args.color)

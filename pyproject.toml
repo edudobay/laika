@@ -19,6 +19,7 @@ classifiers = [
 
 [tool.poetry.scripts]
 laika = "laika.cli:main"
+simple-git-deploy = "laika.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.5"
