@@ -25,18 +25,18 @@ simple-git-deploy = "laika.cli:main"
 [tool.poetry.dependencies]
 python = "^3.5"
 dateparser = "^0.7.0"
-inquirer = "^2.6"
+inquirer = "^2.7"
 importlib_metadata = { version = "^2.0.0", python = "<3.8" }
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.782.0"
 pyflakes = "^2.1"
-pytest = "^5.2"
-twine = {version = "^2.0", python = "^3.6"}
-wheel = "^0.33.6"
+pytest = "^6.0"
+twine = {version = "^3.2", python = "^3.6"}
+wheel = "^0.35"
 black = {version = "19.10b0", allow-prereleases = true, python = "^3.6"}
 behave = "^1.2.6"
-assertpy = "^0.15.0"
+assertpy = "^1.1"
 
 [build-system]
 requires = ["poetry>=0.12"]
