@@ -1,12 +1,12 @@
+from .backend.git.tree import checkout_tree_for_build
 from .core import (
     Config,
     Reporter,
-    checkout_tree_for_build,
     run_build,
     deploy_prepared_build,
-    GitRevisionParseFail,
     TerminateApplication,
 )
+from .git import GitRevisionParseFail
 
 
 def cmd_deploy(args, config: Config, reporter: Reporter):

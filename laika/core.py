@@ -2,7 +2,6 @@ import configparser
 import datetime
 import json
 import os
-import re
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -140,83 +139,8 @@ class BuildMetaFile:
             json.dump(meta.to_dict(), stream)
 
 
-class GitRevisionParseFail(RuntimeError):
-    pass
-
-
 def build_command_line(args):
     return [arg for arg in args if arg is not None]
-
-
-def git_rev_parse_short(ref, gitdir=None):
-    return git_rev_parse(ref, short=True, gitdir=gitdir)
-
-
-def git_rev_parse(ref, short=False, gitdir=None):
-    cmd = build_command_line(
-        [
-            "git",
-            "rev-parse",
-            "--verify",
-            "--short" if short else None,
-            ref + "^{commit}",
-        ]
-    )
-
-    try:
-        return subprocess.check_output(
-            cmd, stderr=subprocess.PIPE, cwd=gitdir, encoding="utf-8"
-        ).strip()
-    except subprocess.CalledProcessError as e:
-        if e.stderr.strip() == "fatal: Needed a single revision":
-            raise GitRevisionParseFail()
-        raise
-
-
-def normalize_refname(refname):
-    return re.sub(r"[^a-zA-Z0-9_-]", "--", refname)
-
-
-def checkout_tree_for_build(
-    deploy_root: Path,
-    fetch_first: bool,
-    git_ref: str,
-    git_dir: Path,
-    reporter: Reporter,
-):
-    if fetch_first:
-        # TODO: Allow fetching from different remote or from --all
-        reporter.info("Fetching from default remote")
-        subprocess.run(["git", "fetch"], cwd=git_dir).check_returncode()
-
-    hash = git_rev_parse_short(git_ref, git_dir)
-    full_hash = git_rev_parse(git_ref, git_dir)
-    timestamp = datetime.datetime.utcnow()
-
-    build_id = "{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}".format(
-        timestamp=timestamp, hash=hash, refname=normalize_refname(git_ref),
-    )
-
-    path = deploy_root / build_id
-
-    reporter.info(
-        "Checking out git ref {git_ref} at directory {path}".format(
-            git_ref=git_ref, path=path
-        )
-    )
-    subprocess.run(
-        ["git", "worktree", "add", "--detach", str(path), git_ref], cwd=git_dir
-    ).check_returncode()
-
-    meta = BuildMeta(
-        source_path=os.path.realpath(git_dir),
-        git_ref=git_ref,
-        git_hash=full_hash,
-        timestamp=timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    )
-    BuildMetaFile.write(path, meta)
-
-    return Build(build_id, path, meta)
 
 
 def load_build(build_id: str, deploy_root: Path,) -> Build:
