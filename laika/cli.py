@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import importlib
+import os
 import warnings
 import sys
 
@@ -8,7 +9,7 @@ from . import __version__
 from .core import Config, Reporter, ConfigFileNotFound
 
 
-def _build_parser():
+def _build_parser(default_no_color=None):
     parser = argparse.ArgumentParser()
     parser.set_defaults(func=None)
 
@@ -31,7 +32,10 @@ def _build_parser():
         "--no-color",
         action="store_false",
         dest="color",
-        help="disable colors in output",
+        help="""
+            disable colors in output. Can be also be set via environment variable NO_COLOR
+        """,
+        default=False if default_no_color else True,
     )
 
     subparsers = parser.add_subparsers(help="sub-commands")
@@ -47,7 +51,10 @@ def _build_parser():
 
 
 def main():
-    parser = _build_parser()
+    # See: https://no-color.org/
+    default_no_color = os.getenv("NO_COLOR") is not None
+
+    parser = _build_parser(default_no_color=default_no_color)
 
     if parser.prog.endswith("simple-git-deploy"):
         from textwrap import dedent
