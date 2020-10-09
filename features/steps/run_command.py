@@ -28,10 +28,12 @@ def step_impl(context, directory, command):
     """
     args = shlex.split(command)
     cwd = resolve_known_dir(directory, context)
+    env = {**os.environ, "NO_COLOR": ""}
 
-    proc = subprocess.run(args, cwd=cwd, capture_output=True, encoding="utf-8")
+    proc = subprocess.run(args, cwd=cwd, env=env, capture_output=True, encoding="utf-8")
     context.last_command_status_code = proc.returncode
     context.last_command_output = proc.stdout
+    context.last_command_error_output = proc.stderr
 
 
 @then("we should get status code {expected_status_code:d} and the following output")
@@ -42,6 +44,18 @@ def step_impl(context, expected_status_code):
     """
     assert_that(context.last_command_status_code).is_equal_to(expected_status_code)
     assert_that(context.last_command_output).is_equal_to(context.text)
+
+
+@then(
+    "we should get status code {expected_status_code:d} and the following error output"
+)
+def step_impl(context, expected_status_code):
+    """
+    :type context: behave.runner.Context
+    :type expected_status_code: int
+    """
+    assert_that(context.last_command_status_code).is_equal_to(expected_status_code)
+    assert_that(context.last_command_error_output).is_equal_to(context.text)
 
 
 @then("we should get status code {expected_status_code:d}")

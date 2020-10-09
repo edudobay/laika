@@ -1,16 +1,27 @@
-from .core import Config, Reporter, checkout_tree_for_build, run_build
+from .core import (
+    Config,
+    Reporter,
+    checkout_tree_for_build,
+    run_build,
+    GitRevisionParseFail,
+    TerminateApplication,
+)
 
 
 def cmd_build(args, config: Config, reporter: Reporter):
     reporter.info("Selecting git repository %s" % config.git_dir)
-    build = checkout_tree_for_build(
-        deploy_root=config.deploy_root,
-        fetch_first=args.fetch_first,
-        git_ref=args.ref,
-        git_dir=config.git_dir,
-        reporter=reporter,
-    )
-    run_build(build, config, reporter)
+    try:
+        build = checkout_tree_for_build(
+            deploy_root=config.deploy_root,
+            fetch_first=args.fetch_first,
+            git_ref=args.ref,
+            git_dir=config.git_dir,
+            reporter=reporter,
+        )
+        run_build(build, config, reporter)
+    except GitRevisionParseFail:
+        reporter.error(f"Invalid git reference: {args.ref}")
+        raise TerminateApplication(1)
 
 
 def register(subparsers):

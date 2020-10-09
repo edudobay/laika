@@ -61,6 +61,12 @@ class Config:
         return cls(config)
 
 
+class TerminateApplication(RuntimeError):
+    def __init__(self, status: int):
+        super().__init__(status)
+        self.status = status
+
+
 class BuildMeta:
     def __init__(self, source_path, git_ref, git_hash, timestamp):
         self.source_path = source_path
@@ -134,18 +140,37 @@ class BuildMetaFile:
             json.dump(meta.to_dict(), stream)
 
 
+class GitRevisionParseFail(RuntimeError):
+    pass
+
+
+def build_command_line(args):
+    return [arg for arg in args if arg is not None]
+
+
 def git_rev_parse_short(ref, gitdir=None):
-    return subprocess.check_output(
-        ["git", "rev-parse", "--short", ref + "^{commit}"],
-        cwd=gitdir,
-        encoding="utf-8",
-    ).strip()
+    return git_rev_parse(ref, short=True, gitdir=gitdir)
 
 
-def git_rev_parse(ref, gitdir=None):
-    return subprocess.check_output(
-        ["git", "rev-parse", ref + "^{commit}"], cwd=gitdir, encoding="utf-8",
-    ).strip()
+def git_rev_parse(ref, short=False, gitdir=None):
+    cmd = build_command_line(
+        [
+            "git",
+            "rev-parse",
+            "--verify",
+            "--short" if short else None,
+            ref + "^{commit}",
+        ]
+    )
+
+    try:
+        return subprocess.check_output(
+            cmd, stderr=subprocess.PIPE, cwd=gitdir, encoding="utf-8"
+        ).strip()
+    except subprocess.CalledProcessError as e:
+        if e.stderr.strip() == "fatal: Needed a single revision":
+            raise GitRevisionParseFail()
+        raise
 
 
 def normalize_refname(refname):

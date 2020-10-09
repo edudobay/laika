@@ -1,3 +1,5 @@
+import sys
+
 from .term_color import formatted_span
 
 
@@ -19,4 +21,4 @@ class Reporter:
         print(self.color("yellow")("> %s" % message))
 
     def error(self, message):
-        print(self.color("red")("ERROR: %s" % message))
+        print(self.color("red")("ERROR: %s" % message), file=sys.stderr)

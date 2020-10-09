@@ -6,7 +6,7 @@ import warnings
 import sys
 
 from . import __version__
-from .core import Config, Reporter, ConfigFileNotFound
+from .core import Config, Reporter, ConfigFileNotFound, TerminateApplication
 
 
 def _build_parser(default_no_color=None):
@@ -80,7 +80,10 @@ def main():
         parser.print_usage()
         sys.exit(1)
 
-    args.func(args, config, reporter)
+    try:
+        args.func(args, config, reporter)
+    except TerminateApplication as e:
+        sys.exit(e.status)
 
 
 if __name__ == "__main__":
