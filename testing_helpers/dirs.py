@@ -5,7 +5,7 @@ from pathlib import Path
 
 class DirectoryContext:
     def __init__(self):
-        self.tempdir = tempfile.TemporaryDirectory(prefix="sgdt-")
+        self.tempdir = tempfile.TemporaryDirectory(prefix="pytest.laika-")
 
     def __enter__(self):
         return self
