@@ -52,7 +52,7 @@ def default_git_repo(context, *args, **kwargs):
 def update_config_file(context, action):
     source_dir = context.root_dir.path / SOURCE_DIR
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(default_section="general")
     filename = source_dir / "deploy.ini"
 
     with open(filename, "r+") as stream:
@@ -77,5 +77,12 @@ def set_post_deploy_command(context, command: str):
         if not config.has_section("post_deploy"):
             config.add_section("post_deploy")
         config.set("post_deploy", "run", command)
+
+    update_config_file(context, update)
+
+
+def set_shell(context, shell: str):
+    def update(config: configparser.ConfigParser):
+        config["general"]["shell"] = shell
 
     update_config_file(context, update)

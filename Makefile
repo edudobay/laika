@@ -13,7 +13,8 @@ FORMAT_DIRS = \
 	setup setup-venv setup-hooks \
 	pre-commit \
 	format type-check \
-	test test_unit test_bdd
+	test test_unit test_bdd \
+	release release_upload
 
 all:
 
@@ -43,3 +44,10 @@ test_unit:
 
 test_bdd:
 	behave
+
+release:
+	poetry build
+
+release_upload:
+	@echo "Please run manually (editing as necessary):"
+	@echo "twine upload -s dist/*"

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import importlib
+import os
 import sys
 
 from . import __version__
-from .core import Config, Reporter, ConfigFileNotFound
+from .core import Config, Reporter, ConfigFileNotFound, TerminateApplication
 
 
-def _build_parser():
+def _build_parser(default_no_color=None):
     parser = argparse.ArgumentParser()
     parser.set_defaults(func=None)
 
@@ -30,7 +31,19 @@ def _build_parser():
         "--no-color",
         action="store_false",
         dest="color",
-        help="disable colors in output",
+        help="""
+            disable colors in output. Can be also be set via environment variable NO_COLOR
+        """,
+        default=False if default_no_color else True,
+    )
+
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="""
+            suppress normal informative output
+        """,
     )
 
     subparsers = parser.add_subparsers(help="sub-commands")
@@ -46,11 +59,14 @@ def _build_parser():
 
 
 def main():
-    parser = _build_parser()
+    # See: https://no-color.org/
+    default_no_color = os.getenv("NO_COLOR") is not None
+
+    parser = _build_parser(default_no_color=default_no_color)
 
     args = parser.parse_args()
 
-    reporter = Reporter(color=args.color)
+    reporter = Reporter(color=args.color, quiet=args.quiet)
     try:
         config = Config.read(args.config_file)
     except ConfigFileNotFound as e:
@@ -61,7 +77,10 @@ def main():
         parser.print_usage()
         sys.exit(1)
 
-    args.func(args, config, reporter)
+    try:
+        args.func(args, config, reporter)
+    except TerminateApplication as e:
+        sys.exit(e.status)
 
 
 if __name__ == "__main__":

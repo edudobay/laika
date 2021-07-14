@@ -4,6 +4,7 @@ from testing_helpers.fixtures.git import (
     default_git_repo,
     set_build_command,
     set_post_deploy_command,
+    set_shell,
 )
 
 
@@ -31,3 +32,12 @@ def step_impl(context, command):
     :type command: str
     """
     set_post_deploy_command(context, command)
+
+
+@given("the shell is set to {shell}")
+def step_impl(context, shell):
+    """
+    :type context: behave.runner.Context
+    :type shell: str
+    """
+    set_shell(context, shell)

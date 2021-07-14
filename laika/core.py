@@ -2,12 +2,13 @@ import configparser
 import datetime
 import json
 import os
-import re
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from .output import Reporter
+
+DEFAULT_SECTION = "general"
 
 
 class ConfigError(RuntimeError):
@@ -45,9 +46,13 @@ class Config:
     def purge_what(self) -> Optional[str]:
         return self.config["purge"].get("what")
 
+    @property
+    def shell(self) -> Optional[str]:
+        return self.config[DEFAULT_SECTION].get("shell")
+
     @classmethod
     def read(cls, filename):
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(default_section=DEFAULT_SECTION)
 
         # defaults
         config.read_dict(
@@ -59,6 +64,12 @@ class Config:
             raise ConfigFileNotFound(os.path.realpath(filename))
 
         return cls(config)
+
+
+class TerminateApplication(RuntimeError):
+    def __init__(self, status: int):
+        super().__init__(status)
+        self.status = status
 
 
 class BuildMeta:
@@ -134,69 +145,18 @@ class BuildMetaFile:
             json.dump(meta.to_dict(), stream)
 
 
-def git_rev_parse_short(ref, gitdir=None):
-    return subprocess.check_output(
-        ["git", "rev-parse", "--short", ref + "^{commit}"],
-        cwd=gitdir,
-        encoding="utf-8",
-    ).strip()
-
-
-def git_rev_parse(ref, gitdir=None):
-    return subprocess.check_output(
-        ["git", "rev-parse", ref + "^{commit}"], cwd=gitdir, encoding="utf-8",
-    ).strip()
-
-
-def normalize_refname(refname):
-    return re.sub(r"[^a-zA-Z0-9_-]", "--", refname)
-
-
-def checkout_tree_for_build(
-    deploy_root: Path,
-    fetch_first: bool,
-    git_ref: str,
-    git_dir: Path,
-    reporter: Reporter,
-):
-    if fetch_first:
-        # TODO: Allow fetching from different remote or from --all
-        reporter.info("Fetching from default remote")
-        subprocess.run(["git", "fetch"], cwd=git_dir).check_returncode()
-
-    hash = git_rev_parse_short(git_ref, git_dir)
-    full_hash = git_rev_parse(git_ref, git_dir)
-    timestamp = datetime.datetime.utcnow()
-
-    build_id = "{timestamp:%Y%m%d%H%M%S}_{hash}_{refname}".format(
-        timestamp=timestamp, hash=hash, refname=normalize_refname(git_ref),
-    )
-
-    path = deploy_root / build_id
-
-    reporter.info(
-        "Checking out git ref {git_ref} at directory {path}".format(
-            git_ref=git_ref, path=path
-        )
-    )
-    subprocess.run(
-        ["git", "worktree", "add", "--detach", str(path), git_ref], cwd=git_dir
-    ).check_returncode()
-
-    meta = BuildMeta(
-        source_path=os.path.realpath(git_dir),
-        git_ref=git_ref,
-        git_hash=full_hash,
-        timestamp=timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    )
-    BuildMetaFile.write(path, meta)
-
-    return Build(build_id, path, meta)
+def build_command_line(args):
+    return [arg for arg in args if arg is not None]
 
 
 def load_build(build_id: str, deploy_root: Path,) -> Build:
     path = deploy_root / build_id
     return get_build(path)
+
+
+def build_shell_command(command: str, config: Config) -> Sequence[str]:
+    shell = config.shell or "/bin/sh"
+    return [shell, "-c", command]
 
 
 def run_command_on_build(
@@ -214,7 +174,10 @@ def run_command_on_build(
     }
 
     subprocess.run(
-        command, shell=True, cwd=build.path, env=hydrated_environment, check=True
+        build_shell_command(command, config),
+        cwd=build.path,
+        env=hydrated_environment,
+        check=True,
     )
 
 
