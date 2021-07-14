@@ -4,7 +4,7 @@ from testing_helpers.dirs import DirectoryContext
 from testing_helpers.git import GitRepo
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def git_repo():
     with DirectoryContext() as tempdir:
         repo = GitRepo(tempdir.path)
