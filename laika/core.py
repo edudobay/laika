@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Sequence
 
+import pytz
+
 from .output import Reporter
 
 DEFAULT_SECTION = "general"
@@ -16,6 +18,10 @@ class ConfigError(RuntimeError):
 
 
 class ConfigFileNotFound(ConfigError):
+    pass
+
+
+class BuildNotFound(RuntimeError):
     pass
 
 
@@ -72,15 +78,29 @@ class TerminateApplication(RuntimeError):
         self.status = status
 
 
-class BuildMeta:
-    def __init__(self, source_path, git_ref, git_hash, timestamp):
+class _BaseBuildMeta:
+    pass
+
+
+class MissingBuildMeta(_BaseBuildMeta):
+    pass
+
+
+class BuildMeta(_BaseBuildMeta):
+    def __init__(
+        self,
+        source_path: str,
+        git_ref: str,
+        git_hash: str,
+        timestamp: datetime.datetime,
+    ):
         self.source_path = source_path
         self.git_ref = git_ref
         self.git_hash = git_hash
         self.timestamp = timestamp
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         d = dict(d)
         version = d.pop("version", "0")
 
@@ -95,20 +115,30 @@ class BuildMeta:
         return cls(**d)
 
     def to_dict(self):
+        timestamp = self.timestamp.astimezone(pytz.utc)
         return dict(
             version="1",
             source_path=self.source_path,
             git_ref=self.git_ref,
             git_hash=self.git_hash,
-            timestamp=self.timestamp,
+            timestamp=timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
 
 
 class Build:
-    def __init__(self, build_id: str, path: Path, meta: BuildMeta):
+    def __init__(self, build_id: str, path: Path, meta: _BaseBuildMeta):
         self.build_id = build_id
         self.path = path
         self.meta = meta
+
+    def is_older_than(self, reference: datetime.datetime) -> bool:
+        if isinstance(self.meta, BuildMeta):
+            return self.meta.timestamp < reference
+
+        return False
+
+    def is_metadata_missing(self) -> bool:
+        return isinstance(self.meta, MissingBuildMeta)
 
 
 class Builds:
@@ -133,7 +163,7 @@ class BuildMetaFile:
     def read(cls, build_dir: Path) -> BuildMeta:
         file_path = build_dir / cls._PATH
         if not file_path.exists():
-            raise FileNotFoundError(f"Build metadata file not found: {file_path}")
+            raise BuildNotFound(f"Build metadata file not found: {file_path}")
 
         with file_path.open() as stream:
             return BuildMeta.from_dict(json.load(stream))
@@ -165,6 +195,8 @@ def run_command_on_build(
     reporter.info("Changing directory to %s" % build.path)
     reporter.info("Running command: %s" % command)
 
+    assert isinstance(build.meta, BuildMeta)
+
     hydrated_environment = {
         **os.environ,
         "DIR_SOURCE": str(build.meta.source_path),
@@ -186,11 +218,15 @@ def run_build(build: Build, config: Config, reporter: Reporter):
 
 
 def get_build(build_path: Path) -> Build:
-    meta = BuildMetaFile.read(build_path)
+    meta: _BaseBuildMeta
+    try:
+        meta = BuildMetaFile.read(build_path)
+    except BuildNotFound:
+        meta = MissingBuildMeta()
     return Build(build_path.name, build_path, meta)
 
 
-def list_builds(deploy_path: Path) -> Builds:
+def list_builds(deploy_path: Path, allow_invalid=True) -> Builds:
     build_paths = sorted(
         d for d in deploy_path.iterdir() if not d.is_symlink() and d.is_dir()
     )
@@ -219,7 +255,11 @@ def list_builds(deploy_path: Path) -> Builds:
 
     current_build_name = resolve_current_build(deploy_path / "current")
 
-    return Builds([get_build(build) for build in build_paths], current_build_name)
+    def _accept_build(build: Build) -> bool:
+        return allow_invalid or not build.is_metadata_missing()
+
+    builds = filter(_accept_build, map(get_build, build_paths))
+    return Builds(list(builds), current_build_name)
 
 
 def post_deploy(build: Build, config: Config, reporter: Reporter):

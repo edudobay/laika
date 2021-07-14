@@ -2,12 +2,19 @@ import sys
 
 import inquirer  # type: ignore
 
-from laika.core import Config, Reporter, list_builds, load_build, deploy_prepared_build
+from laika.core import (
+    Config,
+    Reporter,
+    list_builds,
+    load_build,
+    deploy_prepared_build,
+    TerminateApplication,
+)
 
 
 def cmd_select(args, config: Config, reporter: Reporter):
     if args.deploy_id is None:
-        builds = list_builds(config.deploy_root)
+        builds = list_builds(config.deploy_root, allow_invalid=False)
 
         if not builds:
             reporter.error("No builds available")
@@ -31,6 +38,9 @@ def cmd_select(args, config: Config, reporter: Reporter):
 
     build_id = args.deploy_id
     build = load_build(build_id, config.deploy_root)
+    if build.is_metadata_missing():
+        reporter.error(f"Build not found: {build_id}")
+        raise TerminateApplication(1)
     deploy_prepared_build(build, config, reporter)
 
 

@@ -26,6 +26,7 @@ python = "^3.6"
 dateparser = "^0.7.0"
 inquirer = "^2.7"
 importlib_metadata = { version = "^2.0.0", python = "<3.8" }
+pytz = "^2021.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.782.0"

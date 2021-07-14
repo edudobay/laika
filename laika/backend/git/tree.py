@@ -49,7 +49,7 @@ def checkout_tree_for_build(
         source_path=os.path.realpath(git_dir),
         git_ref=git_ref,
         git_hash=full_hash,
-        timestamp=timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        timestamp=timestamp,
     )
     BuildMetaFile.write(path, meta)
 

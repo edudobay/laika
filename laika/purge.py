@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterable, List
 
-from .core import Build, list_builds
+from .core import Build, list_builds, BuildMeta
 from .output import Reporter
 
 
@@ -17,9 +17,16 @@ class PurgeSpecification(ABC):
     def describe(self) -> str:
         pass
 
+    @staticmethod
+    def _build_meta_sort_key(build: Build):
+        if isinstance(build.meta, BuildMeta):
+            return build.meta.timestamp, build.build_id
+
+        return None, build.build_id
+
     @classmethod
     def sort_latest_first(cls, builds: Iterable[Build]):
-        return sorted(builds, key=lambda build: build.meta.timestamp, reverse=True)
+        return sorted(builds, key=cls._build_meta_sort_key, reverse=True)
 
     @classmethod
     def keep_latest(cls, num_latest: int) -> "PurgeSpecification":
@@ -55,7 +62,8 @@ class DiscardOlderThan(PurgeSpecification):
         return [
             build
             for build in self.sort_latest_first(builds)
-            if build.meta.timestamp < self.oldest_allowed_datetime
+            if build.is_metadata_missing()
+            or build.is_older_than(self.oldest_allowed_datetime)
         ]
 
     def describe(self):
@@ -70,7 +78,7 @@ def purge_deployments(
     git_dir: Path,
     dry_run: bool,
     what_to_purge: PurgeSpecification,
-    reporter: Reporter
+    reporter: Reporter,
 ):
     builds = list_builds(deploy_root)
     eligible_for_removal = [build for build in builds if not builds.is_selected(build)]
@@ -88,11 +96,13 @@ def purge_deployments(
         )
     )
     for build in to_remove:
-        reporter.info(
-            "Remove {build.build_id}, created on {build.meta.timestamp:%Y-%m-%d %H:%M:%S UTC}".format(
-                build=build
-            )
-        )
+        if isinstance(build.meta, BuildMeta):
+            timestamp = build.meta.timestamp.strftime("%Y-%m-%d %H:%M:%S%z")
+            description = f"Remove {build.build_id}, created on {timestamp}"
+        else:
+            description = f"Remove {build.build_id} (invalid metadata)"
+        reporter.info(description)
+
         if not dry_run:
             subprocess.run(
                 ["git", "worktree", "remove", "--force", str(build.path)], cwd=git_dir
