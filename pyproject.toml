@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "laika-deploy"
-version = "0.6"
+version = "0.7"
 description = "A command-line utility for easy and reliable management of manual deployments from Git repositories"
 authors = ["Eduardo Dobay <edudobay@gmail.com>"]
 license = "GPL-3.0"
