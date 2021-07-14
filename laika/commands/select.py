@@ -2,7 +2,7 @@ import sys
 
 import inquirer  # type: ignore
 
-from .core import Config, Reporter, list_builds, load_build, deploy_prepared_build
+from laika.core import Config, Reporter, list_builds, load_build, deploy_prepared_build
 
 
 def cmd_select(args, config: Config, reporter: Reporter):

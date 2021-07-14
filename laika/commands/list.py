@@ -1,4 +1,4 @@
-from .core import Config, Reporter, list_builds
+from laika.core import Config, Reporter, list_builds
 
 
 def cmd_list(args, config: Config, reporter: Reporter):

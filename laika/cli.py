@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import importlib
 import os
 import sys
 
+import laika.commands
 from . import __version__
 from .core import Config, Reporter, ConfigFileNotFound, TerminateApplication
 
@@ -48,11 +48,7 @@ def _build_parser(default_no_color=None):
 
     subparsers = parser.add_subparsers(help="sub-commands")
 
-    modules = (
-        "laika.cmd_%s" % cmd for cmd in ("build", "deploy", "list", "purge", "select")
-    )
-
-    for module in (importlib.import_module(name) for name in modules):
+    for module in laika.commands.find_available_command_modules():
         module.register(subparsers)
 
     return parser

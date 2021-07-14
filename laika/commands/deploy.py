@@ -1,12 +1,12 @@
-from .backend.git.tree import checkout_tree_for_build
-from .core import (
+from laika.backend.git.tree import checkout_tree_for_build
+from laika.core import (
     Config,
     Reporter,
     run_build,
     deploy_prepared_build,
     TerminateApplication,
 )
-from .git import GitRevisionParseFail
+from laika.git import GitRevisionParseFail
 
 
 def cmd_deploy(args, config: Config, reporter: Reporter):

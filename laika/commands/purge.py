@@ -4,8 +4,8 @@ from typing import Optional
 
 import dateparser  # type: ignore
 
-from .core import Config, Reporter
-from .purge import PurgeSpecification, purge_deployments
+from laika.core import Config, Reporter
+from laika.purge import PurgeSpecification, purge_deployments
 
 
 def cmd_purge(args, config: Config, reporter: Reporter):
