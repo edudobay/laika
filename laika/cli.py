@@ -38,6 +38,15 @@ def _build_parser(default_no_color=None):
         default=False if default_no_color else True,
     )
 
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="""
+            suppress normal informative output
+        """,
+    )
+
     subparsers = parser.add_subparsers(help="sub-commands")
 
     modules = (
@@ -69,7 +78,7 @@ def main():
 
     args = parser.parse_args()
 
-    reporter = Reporter(color=args.color)
+    reporter = Reporter(color=args.color, quiet=args.quiet)
     try:
         config = Config.read(args.config_file)
     except ConfigFileNotFound as e:

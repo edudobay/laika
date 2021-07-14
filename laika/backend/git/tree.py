@@ -35,8 +35,14 @@ def checkout_tree_for_build(
             git_ref=git_ref, path=path
         )
     )
+
+    options = []
+    if reporter.quiet:
+        options += ["--quiet"]
+
     subprocess.run(
-        ["git", "worktree", "add", "--detach", str(path), git_ref], cwd=git_dir
+        ["git", "worktree", "add"] + options + ["--detach", str(path), git_ref],
+        cwd=git_dir,
     ).check_returncode()
 
     meta = BuildMeta(

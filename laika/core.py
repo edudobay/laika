@@ -4,9 +4,11 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from .output import Reporter
+
+DEFAULT_SECTION = "general"
 
 
 class ConfigError(RuntimeError):
@@ -44,9 +46,13 @@ class Config:
     def purge_what(self) -> Optional[str]:
         return self.config["purge"].get("what")
 
+    @property
+    def shell(self) -> Optional[str]:
+        return self.config[DEFAULT_SECTION].get("shell")
+
     @classmethod
     def read(cls, filename):
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(default_section=DEFAULT_SECTION)
 
         # defaults
         config.read_dict(
@@ -148,6 +154,11 @@ def load_build(build_id: str, deploy_root: Path,) -> Build:
     return get_build(path)
 
 
+def build_shell_command(command: str, config: Config) -> Sequence[str]:
+    shell = config.shell or "/bin/sh"
+    return [shell, "-c", command]
+
+
 def run_command_on_build(
     command: str, build: Build, config: Config, reporter: Reporter
 ):
@@ -163,7 +174,10 @@ def run_command_on_build(
     }
 
     subprocess.run(
-        command, shell=True, cwd=build.path, env=hydrated_environment, check=True
+        build_shell_command(command, config),
+        cwd=build.path,
+        env=hydrated_environment,
+        check=True,
     )
 
 

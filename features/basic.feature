@@ -42,3 +42,14 @@ Feature: Base behavior
     Then we should get status code 0 and the following output
       """
       """
+
+  Scenario: Run build command with custom shell
+    Given the fixture repository
+    Given the shell is set to /bin/bash
+    Given the build command is set to echo $BASH
+    When on the source dir we run the command: laika -q build main
+    Then we should get status code 0 and the following output
+      """
+      /bin/bash
+
+      """
